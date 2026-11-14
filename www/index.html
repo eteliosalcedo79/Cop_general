@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Extractor de Embeds - Test</title>
+<style>
+  :root {
+    --bg: #06090e;
+    --panel: #0f1319;
+    --border: #1a2a3a;
+    --text: #e8f0f8;
+    --accent: #00cc44;
+    --accent2: #00b0ff;
+    --red: #ff1744;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body { 
+    background: var(--bg); 
+    color: var(--text); 
+    padding: 15px; 
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .header { display: flex; gap: 10px; margin-bottom: 15px; flex-shrink: 0; }
+  .btn {
+    flex: 1; padding: 14px; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: bold; text-transform: uppercase; cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    text-align: center; display: flex; align-items: center; justify-content: center;
+    user-select: none;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-load { background: var(--accent2); color: #000; }
+  .btn-run { background: var(--accent); color: #000; }
+  
+  .status { 
+    text-align: center; font-size: 13px; font-weight: 600; 
+    color: #888; margin-bottom: 15px; min-height: 18px; flex-shrink: 0;
+  }
+
+  /* Lista de Eventos */
+  .event-list { 
+    display: flex; flex-direction: column; gap: 10px; 
+    overflow-y: auto; padding-bottom: 20px; flex: 1;
+  }
+  .event-list::-webkit-scrollbar { width: 4px; }
+  .event-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .event-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    flex-shrink: 0;
+  }
+  
+  .event-header {
+    padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer;
+  }
+  .event-time { 
+    color: var(--accent); font-weight: 900; font-size: 15px; 
+    background: rgba(0, 204, 68, 0.1); border: 1px solid var(--accent);
+    padding: 6px 10px; border-radius: 8px; min-width: 60px; text-align: center;
+  }
+  .event-info { flex: 1; overflow: hidden; }
+  .event-league { 
+    color: var(--accent2); font-size: 11px; text-transform: uppercase; font-weight: 700; 
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .event-match { font-size: 15px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .event-count { font-size: 12px; color: #888; font-weight: 600; white-space: nowrap; }
+  
+  .event-channels { 
+    display: none; background: #0a0f16; border-top: 1px solid var(--border); 
+    padding: 10px; flex-direction: column; gap: 8px; 
+  }
+  .event-card.open .event-channels { display: flex; }
+  
+  /* Fila del canal clickeable */
+  .channel-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px; background: var(--panel); border-radius: 8px; border: 1px solid transparent;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .channel-item:active { background: #1a2535; }
+  .channel-name { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .channel-name::before { content: '🟢'; font-size: 10px; }
+
+  /* ══════════════════════════════════════════
+     REPRODUCTOR EMBED (Mitad superior)
+  ══════════════════════════════════════════ */
+  #embedPlayer {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 50vh; /* Ocupa la mitad superior */
+    background: #000;
+    z-index: 9999;
+    display: none; /* Oculto por defecto */
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+  }
+  #embedPlayer.active { display: flex; }
+
+  .embed-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 15px; background: #0f1319; border-bottom: 1px solid var(--border);
+  }
+  .embed-title { font-size: 16px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  
+  .embed-actions { display: flex; align-items: center; gap: 10px; }
+  
+  .btn-copy-embed {
+    background: transparent; border: 1px solid var(--accent); color: var(--accent);
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .btn-copy-embed:active { background: var(--accent); color: #000; }
+
+  .btn-close {
+    background: transparent; border: none; color: #fff; font-size: 20px; font-weight: bold;
+    cursor: pointer; padding: 0 5px; line-height: 1;
+  }
+  .btn-close:active { color: var(--red); }
+
+  .embed-body { flex: 1; position: relative; background: #000; }
+  .embed-body iframe { width: 100%; height: 100%; border: none; }
+
+  #fileInput { display: none; }
+</style>
+</head>
+<body>
+
+  <!-- Reproductor Embed -->
+  <div id="embedPlayer">
+    <div class="embed-header">
+      <div class="embed-title" id="embedTitle">Canal</div>
+      <div class="embed-actions">
+        <button class="btn-copy-embed" id="btnCopyEmbed">Copiar URL</button>
+        <button class="btn-close" id="btnClosePlayer">✕</button>
+      </div>
+    </div>
+    <div class="embed-body">
+      <iframe id="embedIframe" allowfullscreen></iframe>
+    </div>
+  </div>
+
+  <!-- Controles Principales -->
+  <div class="header">
+    <label class="btn btn-load" for="fileInput" id="lblLoad">Cargar 📥</label>
+    <button class="btn btn-run" id="btnRun" disabled>Buscar</button>
+  </div>
+
+  <div class="status" id="status">Esperando archivo local...</div>
+
+  <div class="event-list" id="eventList"></div>
+
+  <input type="file" id="fileInput" accept="*/*">
+
+  <script>
+    const btnRun = document.getElementById('btnRun');
+    const lblLoad = document.getElementById('lblLoad');
+    const fileInput = document.getElementById('fileInput');
+    const statusTxt = document.getElementById('status');
+    const eventList = document.getElementById('eventList');
+
+    // Referencias al reproductor embed
+    const embedPlayer = document.getElementById('embedPlayer');
+    const embedIframe = document.getElementById('embedIframe');
+    const embedTitle = document.getElementById('embedTitle');
+    const btnCopyEmbed = document.getElementById('btnCopyEmbed');
+    const btnClosePlayer = document.getElementById('btnClosePlayer');
+    let currentEmbedUrl = '';
+
+    // 1. INYECTAR NATIVEFETCH
+    window.nativeFetch = async function(url, options = {}) {
+      if (!window.Capacitor || !window.Capacitor.Plugins.CapacitorHttp) {
+        return fetch(url, options);
+      }
+      const cap = window.Capacitor.Plugins.CapacitorHttp;
+      let headers = {};
+      if (options.headers) {
+        if (typeof options.headers.forEach === 'function') {
+          options.headers.forEach((v, k) => headers[k] = v);
+        } else {
+          headers = options.headers;
+        }
+      }
+      const r = await cap.request({
+        url: url, method: options.method || 'GET', headers: headers, responseType: 'text'
+      });
+      return {
+        ok: r.status >= 200 && r.status < 300,
+        status: r.status,
+        text: async () => r.data,
+        json: async () => JSON.parse(r.data)
+      };
+    };
+
+    // 2. CONTROLADOR DEL REPRODUCTOR
+    function openPlayer(name, url) {
+      embedTitle.textContent = name;
+      currentEmbedUrl = url;
+      
+      // Cargar el embed
+      embedIframe.src = url;
+      embedPlayer.classList.add('active');
+      
+      // Resetear botón de copiar
+      btnCopyEmbed.textContent = 'Copiar URL';
+      btnCopyEmbed.style.background = 'transparent';
+      btnCopyEmbed.style.color = 'var(--accent)';
+    }
+
+    function closePlayer() {
+      embedPlayer.classList.remove('active');
+      // Detener el video limpiando el iframe
+      embedIframe.src = 'about:blank'; 
+    }
+
+    btnClosePlayer.addEventListener('click', closePlayer);
+
+    btnCopyEmbed.addEventListener('click', () => {
+      navigator.clipboard.writeText(currentEmbedUrl).then(() => {
+        btnCopyEmbed.textContent = '¡Copiado!';
+        btnCopyEmbed.style.background = 'var(--accent)';
+        btnCopyEmbed.style.color = '#000';
+        setTimeout(() => {
+          btnCopyEmbed.textContent = 'Copiar URL';
+          btnCopyEmbed.style.background = 'transparent';
+          btnCopyEmbed.style.color = 'var(--accent)';
+        }, 2000);
+      });
+    });
+
+    // 3. CARGAR ARCHIVO LOCAL
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (!file.name.endsWith('.js')) {
+        statusTxt.textContent = `❌ Error: "${file.name}" no es un archivo .js`;
+        statusTxt.style.color = 'var(--red)';
+        btnRun.disabled = true;
+        fileInput.value = ''; 
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          window.getEventos = null;
+          window.eval(event.target.result);
+
+          if (typeof window.getEventos === 'function') {
+            statusTxt.textContent = `✅ Cargado: ${file.name}`;
+            statusTxt.style.color = 'var(--accent)';
+            btnRun.disabled = false;
+            eventList.innerHTML = ''; 
+            closePlayer();
+          } else {
+            throw new Error('El archivo no define window.getEventos');
+          }
+        } catch (err) {
+          statusTxt.textContent = `❌ Error: ${err.message}`;
+          statusTxt.style.color = 'var(--red)';
+          btnRun.disabled = true;
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // 4. EJECUTAR EXTRACTOR
+    btnRun.addEventListener('click', async () => {
+      if (typeof window.getEventos !== 'function') return;
+      
+      btnRun.disabled = true;
+      lblLoad.style.pointerEvents = 'none'; 
+      lblLoad.style.opacity = '0.4';
+      
+      statusTxt.textContent = '⏳ Extrayendo datos...';
+      statusTxt.style.color = '#ffd600';
+      eventList.innerHTML = '';
+      closePlayer();
+
+      try {
+        const eventos = await window.getEventos();
+        
+        if (!eventos || !eventos.length) {
+          statusTxt.textContent = '⚠️ No se encontraron eventos.';
+          statusTxt.style.color = 'var(--red)';
+          return;
+        }
+
+        statusTxt.textContent = `✅ ${eventos.length} eventos extraídos.`;
+        statusTxt.style.color = 'var(--accent)';
+        renderEvents(eventos);
+
+      } catch (err) {
+        statusTxt.textContent = `❌ Error en el extractor: ${err.message}`;
+        statusTxt.style.color = 'var(--red)';
+      } finally {
+        btnRun.disabled = false;
+        lblLoad.style.pointerEvents = 'auto';
+        lblLoad.style.opacity = '1';
+      }
+    });
+
+    // 5. PINTAR EN PANTALLA
+    function renderEvents(eventos) {
+      eventList.innerHTML = '';
+      
+      eventos.forEach(ev => {
+        const card = document.createElement('div');
+        card.className = 'event-card';
+        const chCount = ev.channels ? ev.channels.length : 0;
+
+        card.innerHTML = `
+          <div class="event-header">
+            <div class="event-time">${ev.time}</div>
+            <div class="event-info">
+              <div class="event-league">${ev.flag || '⚽'} ${ev.league}</div>
+              <div class="event-match">${ev.match}</div>
+            </div>
+            <div class="event-count">${chCount} ch ▼</div>
+          </div>
+        `;
+
+        const channelsDiv = document.createElement('div');
+        channelsDiv.className = 'event-channels';
+
+        if (chCount > 0) {
+          ev.channels.forEach(ch => {
+            const chRow = document.createElement('div');
+            chRow.className = 'channel-item';
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'channel-name';
+            nameSpan.textContent = `${ch.name} ${ch.quality ? '('+ch.quality+')' : ''}`;
+            
+            chRow.appendChild(nameSpan);
+            
+            // Al tocar el canal, se abre el reproductor embed
+            chRow.onclick = (e) => {
+              e.stopPropagation(); // Evita cerrar el acordeón
+              openPlayer(ch.name, ch.url);
+            };
+
+            channelsDiv.appendChild(chRow);
+          });
+        } else {
+          channelsDiv.innerHTML = '<div style="color:#888;font-size:12px;padding:10px;text-align:center;">Sin canales aún</div>';
+        }
+
+        card.appendChild(channelsDiv);
+        card.querySelector('.event-header').addEventListener('click', () => {
+          card.classList.toggle('open');
+        });
+
+        eventList.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
