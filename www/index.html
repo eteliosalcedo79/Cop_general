@@ -161,17 +161,12 @@
   const app = document.getElementById('app');
   const navButtons = document.querySelectorAll('#main-nav button');
 
-  // --- HTTP GET NATIVO (SOLO CAPACITOR) ---
   async function httpGet(url, referer) {
-    // Verificamos si Capacitor está disponible
     if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.CapacitorHttp) {
-      throw new Error("CapacitorHttp no está disponible. Asegúrate de compilar con Capacitor.");
+      throw new Error("CapacitorHttp no está disponible.");
     }
-
     const headers = { 'User-Agent': UA, 'Accept':'text/html,application/json,*/*' };
     if (referer) headers['Referer'] = referer;
-
-    // Petición directa sin CORS
     const res = await window.Capacitor.Plugins.CapacitorHttp.get({ url, headers });
     return typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
   }
@@ -419,6 +414,7 @@
     autoFocus();
   }
 
+  // --- MODAL CORREGIDO CON EXTRACCIÓN DE SINOPSIS REAL ---
   async function openDetail(type, id) {
     const modal = document.getElementById('modal');
     const titleEl = document.getElementById('modal-title');
@@ -438,23 +434,55 @@
       const html = await httpGet(url, type === 'anime' ? LATANIME_URL + '/' : CINEHAX_URL + '/');
       const doc = new DOMParser().parseFromString(html, 'text/html');
       
-      let synopsis = 'Sinopsis no disponible.';
-      
+      let synopsis = '';
+      let realTitle = '';
+
       if (type === 'anime') {
-        const animeTitle = doc.querySelector('h1') ? doc.querySelector('h1').textContent.trim() : 'Anime';
-        titleEl.textContent = animeTitle;
-        const descNode = doc.querySelector('.sinopsis, .description, p');
+        // Lógica de Latanime
+        const titleNode = doc.querySelector('h1, .anime-title');
+        if (titleNode) realTitle = titleNode.textContent.trim();
+        
+        // Buscar el contenedor de sinopsis específico de Latanime
+        const descNode = doc.querySelector('.sinopsis, .description, .anime-synopsis, #info p');
         if (descNode) synopsis = descNode.textContent.trim();
+        else {
+          // Si no encuentra la clase, busca el párrafo más largo (suele ser la sinopsis)
+          const ps = Array.from(doc.querySelectorAll('p'));
+          const longestP = ps.reduce((a, b) => a.textContent.length > b.textContent.length ? a : b, {textContent: ''});
+          if(longestP.textContent.length > 50) synopsis = longestP.textContent.trim();
+        }
       } else {
-        const cineTitle = doc.querySelector('h1') ? doc.querySelector('h1').textContent.trim() : 'Título';
-        titleEl.textContent = cineTitle;
-        const descNode = doc.querySelector('.synopsis, .description, .overview, p');
+        // Lógica de CineHax
+        const titleNode = doc.querySelector('h1, .title');
+        if (titleNode) realTitle = titleNode.textContent.trim();
+
+        // CineHax suele usar .description para la sinopsis
+        const descNode = doc.querySelector('.description, .synopsis, .overview');
         if (descNode) synopsis = descNode.textContent.trim();
+        else {
+          // Si no, busca un párrafo con clase text-muted o similar
+          const p = doc.querySelector('p.text-muted, p.description, .movie-info p');
+          if (p) synopsis = p.textContent.trim();
+          else {
+             // Buscar párrafo largo como último recurso
+             const ps = Array.from(doc.querySelectorAll('p'));
+             const longestP = ps.reduce((a, b) => a.textContent.length > b.textContent.length ? a : b, {textContent: ''});
+             if(longestP.textContent.length > 50) synopsis = longestP.textContent.trim();
+          }
+        }
       }
 
-      descEl.textContent = synopsis || 'No se encontró sinopsis para este título.';
+      titleEl.textContent = realTitle || titleEl.textContent;
+      
+      // Limpiamos el texto de la sinopsis de posibles saltos de línea excesivos
+      if (synopsis) {
+        synopsis = synopsis.replace(/\s+/g, ' ').trim();
+      }
+
+      descEl.textContent = synopsis || 'No se encontró sinopsis detallada para este título.';
     } catch (e) {
-      descEl.textContent = 'Error al cargar la sinopsis: ' + e.message;
+      descEl.textContent = 'Error de conexión al cargar la sinopsis. Revisa tu conexión a internet.';
+      console.error(e);
     }
   }
 
