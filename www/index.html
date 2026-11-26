@@ -223,14 +223,33 @@
   let provider = null, extractor = null, canales = null, vistaActual = 'canales';
 
   // ---------- Utilidades ----------
+  const HTTP_MS = 15000;
   async function httpGet(url, referer, extraHeaders) {
-    if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.CapacitorHttp) {
-      throw new Error('CapacitorHttp no está disponible.');
-    }
+    const cap = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorHttp;
+    if (!cap) throw new Error('CapacitorHttp no está disponible.');
     const headers = Object.assign({ 'User-Agent': UA, 'Accept': 'text/html,application/json,*/*' }, extraHeaders || {});
     if (referer) headers['Referer'] = referer;
-    const res = await window.Capacitor.Plugins.CapacitorHttp.get({ url, headers });
-    return typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+    const corto = url.replace(/^https?:\/\//, '').slice(0, 70);
+    const t0 = Date.now();
+    try {
+      const res = await Promise.race([
+        cap.get({ url, headers, connectTimeout: 10000, readTimeout: HTTP_MS }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('Tiempo agotado (' + (HTTP_MS / 1000) + ' s)')), HTTP_MS + 3000))
+      ]);
+      const body = typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+      window.PH.last = 'HTTP ' + res.status + ' · ' + body.length + ' bytes · ' + (Date.now() - t0) + ' ms · ' + corto;
+      if (res.status >= 400) throw new Error('HTTP ' + res.status);
+      if (/just a moment|cf-chl|attention required/i.test(body.slice(0, 4000)) && !/scroll-section/.test(body)) throw new Error('Bloqueado por Cloudflare');
+      return body;
+    } catch (e) {
+      window.PH.last = 'ERROR: ' + ((e && e.message) || e) + ' · ' + (Date.now() - t0) + ' ms · ' + corto;
+      throw e;
+    }
+  }
+
+  function diag() {
+    return window.PH && window.PH.last
+      ? '<div style="font-size:1.1vw;opacity:.8;margin-top:1vh;word-break:break-all">Último intento: ' + escapeHtml(window.PH.last) + '</div>' : '';
   }
 
   function fixUrl(u, base) {
@@ -364,7 +383,7 @@
     else app.innerHTML = `<div class="loader">Cargando ${filterType === 'movie' ? 'películas' : 'series'}...</div>`;
     try {
       const cats = await provider.home(filterType);
-      if (!cats.length) { if (!hayCache) app.innerHTML = '<div class="error">No se encontraron resultados.</div>'; return; }
+      if (!cats.length) { if (!hayCache) app.innerHTML = '<div class="error">No se encontraron resultados.' + diag() + '</div>'; return; }
       const ser = JSON.stringify(cats);
       const nuevo = ser !== LS.get(key);
       if (nuevo) LS.set(key, ser);
@@ -380,7 +399,7 @@
         app.scrollTop = top;
         if (id) { const el = Array.from(app.querySelectorAll('.card[data-id]')).find(c => c.getAttribute('data-id') === id); if (el) el.focus(); }
       }
-    } catch (e) { if (!hayCache) app.innerHTML = `<div class="error">Error: ${escapeHtml(e.message)}</div>`; }
+    } catch (e) { if (!hayCache) app.innerHTML = `<div class="error">Error: ${escapeHtml(e.message)}${diag()}</div>`; }
   }
 
   function renderGenres() {
@@ -667,7 +686,7 @@
       renderDetailActions(M);
       if (type === 'tv' && M.seasons.length) selectSeason(M, M.seasons[0]);
     } catch (e) {
-      dDesc.textContent = 'Error de conexión al cargar la ficha. Revisa tu conexión a internet.';
+      dDesc.innerHTML = 'Error de conexión al cargar la ficha. Revisa tu conexión a internet.' + diag();
       console.error(e);
     }
   }
@@ -722,7 +741,7 @@
     if (!extractor) { mDesc.textContent = 'El extractor de video no está disponible.'; return; }
     let servers = [];
     try { servers = await extractor.servers(media); } catch (e) { console.error(e); }
-    if (!servers.length) { mDesc.textContent = 'No se encontraron servidores para este título.'; return; }
+    if (!servers.length) { mDesc.textContent = 'No se encontraron servidores para este título.' + (window.PH.last ? ' (' + window.PH.last + ')' : ''); return; }
     mDesc.textContent = 'Elige un servidor:';
     servers.forEach(s => addOpt(mList, s.name, () => playServer(s, label)));
     focusModal();
@@ -744,11 +763,41 @@
   mClose.addEventListener('click', () => { if (modalBack) modalBack(); else closeModal(); });
   mClose.addEventListener('keydown', (e) => { if (e.key === 'Enter') mClose.click(); });
 
+  // ---------- Botón Atrás ----------
+  let _ultimoAtras = 0;
+  function handleBack() {
+    const ahora = Date.now();
+    if (ahora - _ultimoAtras < 300) return;   // evita doble disparo
+    _ultimoAtras = ahora;
+    if (playerEl.classList.contains('open')) { stopPlayer(); return; }
+    if (modal.classList.contains('open')) { mClose.click(); return; }
+    if (detail.classList.contains('open')) { closeDetail(); return; }
+    if (vistaActual !== 'canales') { navButtons[0].click(); navButtons[0].focus(); return; }
+    // En Canales: confirmar salida
+    lastFocus = document.activeElement;
+    setModal('¿Salir de la aplicación?', '', null);
+    mClose.textContent = 'Cancelar';
+    addOpt(mList, 'Salir', () => {
+      const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+      if (App && App.exitApp) App.exitApp(); else window.close();
+    });
+    modal.classList.add('open');
+    focusModal();
+  }
+
+  // Android (Capacitor): el botón Atrás llega como evento "backButton", no como tecla
+  try {
+    const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (App && App.addListener) App.addListener('backButton', () => handleBack());
+  } catch (e) { console.warn('No se pudo registrar backButton', e); }
+
+  // Control remoto / teclado
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Backspace' || e.key === 'Escape' || e.key === 'GoBack') {
-      if (playerEl.classList.contains('open')) { e.preventDefault(); stopPlayer(); return; }
-      if (modal.classList.contains('open')) { mClose.click(); return; }
-      if (detail.classList.contains('open')) { e.preventDefault(); closeDetail(); }
+      const t = e.target;
+      if (e.key === 'Backspace' && t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+      e.preventDefault();
+      handleBack();
     }
   });
 
