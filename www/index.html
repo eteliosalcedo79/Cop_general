@@ -3,43 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>CineHax + Latanime TV</title>
+<title>CineHax TV</title>
 <style>
   :root{
     --bg:#0d1117; --sidebar:#161b22; --card:#1b2230; --text:#e6edf3;
-    --muted:#8b949e; --accent:#e50914; --border:#30363d;
+    --muted:#8b949e; --accent:#e50914; --border:#30363d; --bar-h:12vh;
   }
   *{box-sizing:border-box; outline:none;}
   html,body{
     margin:0; padding:0; background:var(--bg); color:var(--text);
     font-family:system-ui,Segoe UI,Roboto,sans-serif;
-    width:100vw; height:100vh; overflow:hidden; display:flex;
+    width:100vw; height:100vh; overflow:hidden; display:flex; flex-direction:column;
   }
-  
-  /* --- BARRA LATERAL --- */
-  aside {
-    width: 15vw; min-width: 200px; max-width: 260px; background: var(--sidebar);
-    display: flex; flex-direction: column; padding: 3vh 1vw;
-    border-right: 1px solid var(--border); z-index: 10;
-  }
-  aside h1 { color: var(--accent); font-size: 2vw; font-weight: 900; margin: 0 0 3vh 0; text-align: center;}
-  aside nav { 
-    display: flex; flex-direction: column; gap: 1.5vh; 
-    flex: 1; justify-content: center;
-  }
-  aside button {
-    background: transparent; color: var(--muted); border: 2px solid transparent;
-    padding: 1.2vh 1vw; border-radius: 8px; font-size: 1.3vw; font-weight: bold;
-    text-align: left; cursor: pointer; transition: all 0.2s;
-  }
-  aside button:focus, aside button.active {
-    background: var(--card); color: #fff; border-color: var(--accent);
-    transform: scale(1.03); box-shadow: 0 0 15px rgba(229,9,20,0.3);
-  }
+
+  /* --- BARRA SUPERIOR --- */
+  #topbar { height: var(--bar-h); flex: none; display: flex; align-items: center; padding: 0 1vw;
+    background: linear-gradient(180deg, #0b1a3a 0%, #0a1224 100%); border-bottom: 1px solid #1c2a4a; z-index: 60; }
+  #main-nav { display: flex; width: 100%; gap: 1vw; }
+  #main-nav button { flex: 1; display: flex; align-items: center; justify-content: center; gap: .7vw;
+    background: transparent; color: #8da0c4; border: 3px solid transparent; border-radius: 14px; height: calc(var(--bar-h) * .72);
+    font-size: 1.4vw; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+  #main-nav button svg { width: 1.8vw; height: 1.8vw; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* seleccionado: rojo */
+  #main-nav button.active { background: var(--accent); color: #fff; }
+  /* foco: borde rojo con brillo */
+  #main-nav button:focus { background: var(--card); color: #fff; border-color: var(--accent); box-shadow: 0 0 15px rgba(229,9,20,.45); }
+  /* seleccionado + foco: borde blanco para diferenciar */
+  #main-nav button.active:focus { background: var(--accent); border-color: #fff; box-shadow: 0 0 18px rgba(255,255,255,.55); }
 
   /* --- CONTENIDO PRINCIPAL --- */
   main {
-    flex: 1; padding: 4vh 3vw; overflow-y: auto; overflow-x: hidden;
+    flex: 1; min-height: 0; padding: 4vh 3vw; overflow-y: auto; overflow-x: hidden;
     scroll-behavior: smooth;
   }
   main::-webkit-scrollbar { width: 8px; }
@@ -47,10 +41,10 @@
 
   .section { margin-bottom: 4vh; }
   .section h2 { font-size: 1.8vw; margin: 0 0 1.5vh 0; font-weight: 600; }
-  
+
   /* Filas Horizontales */
   .carousel {
-    display: flex; gap: 1.5vw; overflow-x: auto; 
+    display: flex; gap: 1.5vw; overflow-x: auto;
     padding: 2vh 1vw 3vh 1vw;
     scroll-behavior: smooth; scrollbar-width: none;
   }
@@ -66,14 +60,16 @@
     border: 3px solid transparent; display: flex; flex-direction: column; cursor: pointer;
   }
   .grid .card { flex: none; width: 100%; }
-  
+
   .card:focus {
     transform: scale(1.05); border-color: var(--accent);
     box-shadow: 0 10px 20px rgba(229,9,20,0.4); z-index: 10; position: relative;
   }
   .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; }
+  .card.chan { flex: 0 0 11vw; }
+  .card.chan img { aspect-ratio: 1/1; object-fit: contain; background: #fff; padding: 6px; }
   .card .meta { padding: 1.5vh 1vw; display: flex; align-items: center; }
-  
+
   .card .title {
     font-size: 1.2vw; font-weight: bold; line-height: 1.2; width: 100%;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -101,71 +97,137 @@
   /* MODAL Y ESTADOS */
   .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 100; }
   .modal.open { display: flex; }
-  .modal-inner { background: var(--sidebar); border-radius: 16px; padding: 4vh 4vw; max-width: 70vw; width: 100%; text-align: center; border: 2px solid var(--border); }
+  .modal-inner { background: var(--sidebar); border-radius: 16px; padding: 4vh 4vw; max-width: 70vw; width: 100%; text-align: center; border: 2px solid var(--border); max-height: 92vh; overflow-y: auto; }
   .modal-inner h3 { font-size: 2.5vw; margin: 0 0 2vh 0; color: var(--accent); }
-  .modal-inner p { font-size: 1.4vw; color: var(--text); margin-bottom: 3vh; line-height: 1.5; text-align: justify; max-height: 40vh; overflow-y: auto;}
+  .modal-inner p { font-size: 1.4vw; color: var(--text); margin: 0 0 2.5vh 0; line-height: 1.5; text-align: justify; max-height: 22vh; overflow-y: auto; }
   .modal-inner button { background: var(--accent); color: #fff; border: none; padding: 1.5vh 3vw; font-size: 1.5vw; border-radius: 8px; font-weight: bold; }
   .modal-inner button:focus { box-shadow: 0 0 15px var(--accent); transform: scale(1.05); }
-  
+  .modal-row { display: flex; gap: 1vw; flex-wrap: wrap; justify-content: center; margin-bottom: 2vh; }
+  .modal-list { display: flex; flex-direction: column; gap: 1vh; align-items: stretch; max-height: 32vh; overflow-y: auto; margin-bottom: 2.5vh; padding: 0.5vh 0.5vw; }
+  .modal-row:empty, .modal-list:empty { display: none; }
+  .modal-inner button.opt { background: var(--card); border: 2px solid var(--border); padding: 1.2vh 1.5vw; font-size: 1.3vw; text-align: left; }
+  .modal-inner button.opt.sel { border-color: #fff; }
+  .modal-inner button.opt:focus { border-color: var(--accent); box-shadow: 0 0 12px rgba(229,9,20,0.5); transform: none; }
+
+  /* REPRODUCTOR */
+  #player { position: fixed; inset: 0; background: #000; z-index: 200; display: none; flex-direction: column; }
+  #player.open { display: flex; }
+  #player-bar { padding: 1.2vh 2vw; font-size: 1.5vw; background: #111; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #player video { flex: 1; width: 100%; min-height: 0; background: #000; }
+  #player-msg { position: absolute; left: 0; right: 0; top: 50%; text-align: center; font-size: 1.8vw; color: #fff; padding: 2vh 3vw; pointer-events: none; }
+
+
+  /* DETALLE (pantalla propia, como la guía) */
+  #detail { position: fixed; top: var(--bar-h); right: 0; bottom: 0; left: 0; z-index: 50; display: none;
+    background: var(--bg) center/cover no-repeat; overflow-y: auto; }
+  #detail.open { display: block; }
+  #detail::before { content: ''; position: fixed; top: var(--bar-h); right: 0; bottom: 0; left: 0;
+    background: linear-gradient(90deg, rgba(13,17,23,.96) 0%, rgba(13,17,23,.8) 45%, rgba(13,17,23,.55) 100%), linear-gradient(0deg, var(--bg) 0%, transparent 55%);
+    pointer-events: none; }
+  .d-inner { position: relative; padding: 5vh 3vw 6vh; min-height: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 1.4vh; }
+  .d-title { font-size: 3.6vw; font-weight: 900; margin: 6vh 0 0; line-height: 1.1; }
+  .d-meta { display: flex; flex-wrap: wrap; gap: .8vw; align-items: center; font-size: 1.3vw; color: #c9d1d9; }
+  .d-dot { opacity: .5; }
+  .d-imdb { background: #f5c518; color: #000; font-weight: 900; padding: .2vh .6vw; border-radius: 4px; }
+  .d-desc { font-size: 1.45vw; line-height: 1.55; max-width: 62vw; margin: .6vh 0 1vh; color: #e6edf3; }
+  .d-actions { display: flex; flex-wrap: wrap; gap: 1vw; align-items: center; }
+  .d-btn { background: rgba(27,34,48,.9); color: #fff; border: 3px solid var(--border); border-radius: 40px; padding: 1.4vh 2.4vw; font-size: 1.4vw; font-weight: 900; cursor: pointer; }
+  .d-btn:focus, .d-btn.active { border-color: #00a8ff; box-shadow: 0 0 18px rgba(0,168,255,.55); }
+  .d-btn.active { background: #00a8ff; color: #001a2b; }
+  .d-btn.play { background: var(--accent); border-color: var(--accent); }
+  .d-btn.play:focus { border-color: #fff; box-shadow: 0 0 18px rgba(229,9,20,.7); }
+  .d-eps { display: flex; gap: 1.2vw; overflow-x: auto; padding: 1.5vh .5vw 2vh; margin-top: 1vh; scrollbar-width: none; }
+  .d-eps::-webkit-scrollbar { display: none; }
+  .ep-card { flex: 0 0 22vw; height: 15vh; border-radius: 14px; overflow: hidden; position: relative; background: var(--card) center/cover no-repeat; border: 3px solid transparent; cursor: pointer; display: flex; align-items: flex-end; }
+  .ep-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.88), rgba(0,0,0,.25)); }
+  .ep-card:focus { border-color: #00a8ff; box-shadow: 0 0 18px rgba(0,168,255,.55); transform: scale(1.03); }
+  .ep-info { position: relative; padding: 1.2vh 1vw; width: 100%; }
+  .ep-num { display: inline-block; background: rgba(255,255,255,.14); font-size: .95vw; font-weight: 900; letter-spacing: .15em; padding: .3vh .6vw; border-radius: 6px; margin-bottom: .6vh; }
+  .ep-title { font-size: 1.5vw; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ep-dur { font-size: 1.1vw; color: #c9d1d9; margin-top: .3vh; }
+
   .error { background: #3d1114; border: 1px solid #7a1c20; color: #ffb3b8; padding: 2vh; border-radius: 8px; font-size: 1.5vw; margin: 2vh 0; }
   .loader { text-align: center; padding: 10vh; color: var(--muted); font-size: 2vw; }
 </style>
 </head>
 <body>
 
-<aside>
-  <h1>CineHax TV</h1>
+<header id="topbar">
   <nav id="main-nav">
-    <button data-view="movies" class="active" tabindex="0">Películas</button>
-    <button data-view="tv" tabindex="0">Series</button>
-    <button data-view="anime" tabindex="0">Anime</button>
-    <button data-view="genres" tabindex="0">Géneros</button>
-    <button data-view="search" tabindex="0">Buscar</button>
+    <button data-view="canales" class="active" tabindex="0"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Canales</button>
+    <button data-view="movies" tabindex="0"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 8l3-4h4L7 8M10 8l3-4h4l-3 4"/></svg>Películas</button>
+    <button data-view="tv" tabindex="0"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M10 8.5v4l4-2z"/><path d="M8 21h8"/></svg>Series</button>
+    <button data-view="genres" tabindex="0"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>Géneros</button>
+    <button data-view="search" tabindex="0"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/></svg>Buscar</button>
   </nav>
-</aside>
+</header>
 
 <main id="app">
-  <div class="loader">Cargando...</div>
+  <div class="loader" id="boot-msg">Cargando...</div>
 </main>
+
+<div id="detail">
+  <div class="d-inner">
+    <h1 class="d-title" id="d-title"></h1>
+    <div class="d-meta" id="d-meta"></div>
+    <p class="d-desc" id="d-desc"></p>
+    <div class="d-actions" id="d-actions"></div>
+    <div class="d-eps" id="d-eps"></div>
+  </div>
+</div>
 
 <div class="modal" id="modal">
   <div class="modal-inner">
     <h3 id="modal-title">Cargando...</h3>
-    <p id="modal-desc">Obteniendo sinopsis...</p>
+    <p id="modal-desc"></p>
+    <div class="modal-row" id="modal-row"></div>
+    <div class="modal-list" id="modal-list"></div>
     <button id="modal-close" tabindex="0">Cerrar</button>
   </div>
 </div>
 
+<div id="player">
+  <div id="player-bar"></div>
+  <video id="player-video" controls autoplay playsinline tabindex="0"></video>
+  <div id="player-msg"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.14/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js"></script>
+
 <script>
 (() => {
-  const CINEHAX_URL = 'https://cinehax.com';
-  const LATANIME_URL = 'https://latanime.org';
-  const TMDB_IMG = 'https://image.tmdb.org/t/p/w500';
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+  const RAW_BASE = 'https://raw.githubusercontent.com/iptv-tec/Contenido/main/';
 
-  const GENRES_CINEHAX = [
-    ['movie:action','Películas: Acción'],['movie:adventure','Películas: Aventura'],
-    ['movie:comedy','Películas: Comedia'],['movie:horror','Películas: Terror'],
-    ['movie:sci-fi','Películas: Ciencia Ficción'],['movie:drama','Películas: Drama'],
-    ['tv:action-adventure','Series: Acción y aventura'],['tv:soap','Series: Telenovela'],
-    ['tv:war-politics','Series: Guerra y política'],['tv:sci-fi-fantasy','Series: Ciencia ficción']
-  ];
-
-  const GENRES_ANIME = [
-    ['anime:accion','Anime: Acción'],['anime:aventura','Anime: Aventura'],
-    ['anime:comedia','Anime: Comedia'],['anime:drama','Anime: Drama'],
-    ['anime:fantasia','Anime: Fantasía'],['anime:romance','Anime: Romance'],
-    ['anime:shonen','Anime: Shonen'],['anime:seinen','Anime: Seinen']
+  // Archivos que se descargan de GitHub y se guardan en caché según version.json
+  const ARCHIVOS = [
+    { clave: 'version',           archivo: 'canales.json',             cache: 'ph_cache_canales',   nombre: 'canales' },
+    { clave: 'cinehax_version',   archivo: 'proveedor_cinehax.js',     cache: 'ph_cache_cinehax',   nombre: 'proveedor de películas y series' },
+    { clave: 'extractor_version', archivo: 'extractor_moviemaster.js', cache: 'ph_cache_extractor', nombre: 'extractor de video' }
   ];
 
   const app = document.getElementById('app');
   const navButtons = document.querySelectorAll('#main-nav button');
+  const modal = document.getElementById('modal');
+  const mTitle = document.getElementById('modal-title');
+  const mDesc = document.getElementById('modal-desc');
+  const mRow = document.getElementById('modal-row');
+  const mList = document.getElementById('modal-list');
+  const mClose = document.getElementById('modal-close');
+  const playerEl = document.getElementById('player');
+  const playerBar = document.getElementById('player-bar');
+  const playerMsg = document.getElementById('player-msg');
+  const video = document.getElementById('player-video');
 
-  async function httpGet(url, referer) {
+  let provider = null, extractor = null, canales = null, vistaActual = 'canales';
+
+  // ---------- Utilidades ----------
+  async function httpGet(url, referer, extraHeaders) {
     if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.CapacitorHttp) {
-      throw new Error("CapacitorHttp no está disponible.");
+      throw new Error('CapacitorHttp no está disponible.');
     }
-    const headers = { 'User-Agent': UA, 'Accept':'text/html,application/json,*/*' };
+    const headers = Object.assign({ 'User-Agent': UA, 'Accept': 'text/html,application/json,*/*' }, extraHeaders || {});
     if (referer) headers['Referer'] = referer;
     const res = await window.Capacitor.Plugins.CapacitorHttp.get({ url, headers });
     return typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
@@ -178,15 +240,78 @@
     return base + (u.startsWith('/') ? '' : '/') + u;
   }
 
-  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
+  // El proveedor y el extractor descargados usan estas funciones
+  window.PH = { httpGet, fixUrl, escapeHtml, UA };
+
+  // ---------- Caché local + descarga por versión ----------
+  const MEM = {};
+  const LS = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+  };
+
+  function setBoot(msg) {
+    const el = document.getElementById('boot-msg');
+    if (el) el.textContent = msg;
+  }
+
+  async function fetchRaw(file, ms) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), ms || 8000);
+    try {
+      const r = await fetch(RAW_BASE + file + '?t=' + Date.now(), { cache: 'no-store', signal: ctl.signal });
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + file);
+      return await r.text();
+    } finally { clearTimeout(t); }
+  }
+
+  // Carga SIEMPRE desde la copia guardada (instantáneo). Devuelve true si había todo.
+  function cargarDesdeCache() {
+    const leer = a => MEM[a.cache] || LS.get(a.cache);
+    try { canales = JSON.parse(leer(ARCHIVOS[0]) || 'null'); } catch (e) { canales = null; }
+    for (const a of [ARCHIVOS[1], ARCHIVOS[2]]) {
+      const code = leer(a);
+      if (!code) continue;
+      try { new Function(code)(); } catch (e) { console.error('Error ejecutando ' + a.archivo, e); }
+    }
+    provider = window.PH_CINEHAX || null;
+    extractor = window.PH_EXTRACTOR || null;
+    return !!(canales && provider && extractor);
+  }
+
+  // Revisa version.json y descarga SOLO lo que cambió. Devuelve las claves de caché actualizadas.
+  async function revisarActualizaciones() {
+    let remota = null;
+    try { remota = JSON.parse(await fetchRaw('version.json', 6000)); } catch (e) { console.warn('version.json no disponible', e); }
+    let locales = {};
+    try { locales = JSON.parse(LS.get('ph_versiones') || '{}'); } catch (e) { locales = {}; }
+    const actualizados = [];
+    for (const a of ARCHIVOS) {
+      const guardado = MEM[a.cache] || LS.get(a.cache);
+      const hayRemota = remota && remota[a.clave] !== undefined;
+      const cambio = hayRemota && remota[a.clave] !== locales[a.clave];
+      if (guardado && !cambio) continue;
+      if (!remota && guardado) continue;
+      setBoot('Descargando ' + a.nombre + '...');
+      try {
+        const txt = await fetchRaw(a.archivo, 15000);
+        MEM[a.cache] = txt;
+        if (LS.set(a.cache, txt) && hayRemota) locales[a.clave] = remota[a.clave];
+        actualizados.push(a.cache);
+      } catch (e) { console.warn('No se pudo descargar ' + a.archivo, e); }
+    }
+    LS.set('ph_versiones', JSON.stringify(locales));
+    return actualizados;
+  }
+
+  // ---------- Tarjetas y vistas ----------
   function cardHTML(s) {
     const img = s.poster ? `<img src="${escapeHtml(s.poster)}" onerror="this.style.opacity=.3" loading="lazy">` : `<img loading="lazy">`;
     return `<div class="card" tabindex="0" data-id="${escapeHtml(s.id)}" data-type="${s.type}">
       ${img}
-      <div class="meta">
-        <div class="title">${escapeHtml(s.title)}</div>
-      </div>
+      <div class="meta"><div class="title">${escapeHtml(s.title)}</div></div>
     </div>`;
   }
 
@@ -199,19 +324,28 @@
 
   function bindCards(container) {
     container.querySelectorAll('.card[data-id]').forEach(c => {
-      c.addEventListener('click', () => openDetail(c.getAttribute('data-type'), c.getAttribute('data-id')));
+      c.addEventListener('click', () => {
+        const t = c.querySelector('.title'), im = c.querySelector('img');
+        openDetail(c.getAttribute('data-type'), c.getAttribute('data-id'), t ? t.textContent : '', im ? im.getAttribute('src') : '', c);
+      });
       c.addEventListener('keydown', (e) => { if (e.key === 'Enter') c.click(); });
     });
   }
 
-  function renderHome(cats) {
+  function needProvider() {
+    if (provider) return false;
+    app.innerHTML = '<div class="error">No se pudo cargar el proveedor de películas y series. Revisa tu conexión y reabre la app.</div>';
+    return true;
+  }
+
+  function renderHome(cats, noFocus) {
     let html = '';
     for (const cat of cats) {
       html += `<div class="section"><h2>${escapeHtml(cat.name)}</h2><div class="carousel">${cat.list.map(cardHTML).join('')}</div></div>`;
     }
     app.innerHTML = html || '<div class="loader">Sin resultados</div>';
     bindCards(app);
-    autoFocus();
+    if (!noFocus) autoFocus();
   }
 
   function renderGrid(title, shows) {
@@ -220,148 +354,64 @@
     autoFocus();
   }
 
+  async function showHome(filterType) {
+    if (needProvider()) return;
+    const key = 'ph_home_' + filterType;
+    let cached = null;
+    try { cached = JSON.parse(LS.get(key) || 'null'); } catch (e) { cached = null; }
+    const hayCache = Array.isArray(cached) && cached.length > 0;
+    if (hayCache) renderHome(cached);
+    else app.innerHTML = `<div class="loader">Cargando ${filterType === 'movie' ? 'películas' : 'series'}...</div>`;
+    try {
+      const cats = await provider.home(filterType);
+      if (!cats.length) { if (!hayCache) app.innerHTML = '<div class="error">No se encontraron resultados.</div>'; return; }
+      const ser = JSON.stringify(cats);
+      const nuevo = ser !== LS.get(key);
+      if (nuevo) LS.set(key, ser);
+      if (vistaActual !== (filterType === 'movie' ? 'movies' : 'tv')) return;
+      if (!hayCache) { renderHome(cats); return; }
+      // Ya se mostró la copia guardada: si hay cambios, se refresca en pantalla sin perder la posición
+      const ocupado = detail.classList.contains('open') || modal.classList.contains('open') || playerEl.classList.contains('open');
+      if (nuevo && !ocupado) {
+        const act = document.activeElement;
+        const id = act && app.contains(act) && act.getAttribute ? act.getAttribute('data-id') : null;
+        const top = app.scrollTop;
+        renderHome(cats, true);
+        app.scrollTop = top;
+        if (id) { const el = Array.from(app.querySelectorAll('.card[data-id]')).find(c => c.getAttribute('data-id') === id); if (el) el.focus(); }
+      }
+    } catch (e) { if (!hayCache) app.innerHTML = `<div class="error">Error: ${escapeHtml(e.message)}</div>`; }
+  }
+
   function renderGenres() {
+    if (needProvider()) return;
     let html = `<div class="section"><h2>Categorías</h2><div class="grid">`;
-    [...GENRES_CINEHAX, ...GENRES_ANIME].forEach(([id, name]) => {
+    provider.genres.forEach(([id, name]) => {
       html += `<div class="card genre-card" tabindex="0" data-genre="${escapeHtml(id)}">${escapeHtml(name)}</div>`;
     });
     html += `</div></div>`;
     app.innerHTML = html;
     app.querySelectorAll('.genre-card').forEach(el => {
-      el.addEventListener('click', () => loadGenre(el.getAttribute('data-genre'), 1));
-      el.addEventListener('keydown', (e) => { if(e.key === 'Enter') el.click(); });
+      el.addEventListener('click', () => loadGenre(el.getAttribute('data-genre')));
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter') el.click(); });
     });
     autoFocus();
   }
 
-  function parseCineHaxCard(a) {
-    const href = a.getAttribute('href') || '';
-    const m = href.match(/\/(?:pelicula|serie)\/(\d+)/);
-    if (!m) return null;
-    const id = m[1];
-    const isTv = href.includes('/serie/');
-    const img = a.querySelector('img');
-    let title = (img && img.getAttribute('alt')) || a.getAttribute('title') || '';
-    if (!title) { const h = a.querySelector('h2,h3,span'); title = h ? h.textContent.trim() : ''; }
-    title = title.replace(/^Ver\s+/i,'').trim() || (isTv ? 'Serie ' + id : 'Película ' + id);
-    const poster = img ? fixUrl(img.getAttribute('src'), CINEHAX_URL) : null;
-    return { id, type: isTv?'tv':'movie', title, poster };
-  }
-
-  async function loadCategorizedHome(filterType) {
-    const isMovie = filterType === 'movie';
-    app.innerHTML = `<div class="loader">Cargando ${isMovie ? 'películas' : 'series'}...</div>`;
-    try {
-      const html = await httpGet(CINEHAX_URL + '/', CINEHAX_URL + '/');
-      let categories = [];
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      
-      doc.querySelectorAll('.scroll-section, #top-slider-container, #top-series-slider-container').forEach(el => {
-        if (el.id === 'cx-continue') return;
-        let name = el.id === 'top-slider-container' ? 'Top Películas Hoy' : el.id === 'top-series-slider-container' ? 'Top Series Hoy' : null;
-        if (!name) { 
-          const h = el.querySelector('h2,h3'); 
-          if (!h) return; 
-          name = h.textContent.replace(/Ver todo.*/i,'').trim(); 
-        }
-
-        const lowerName = name.toLowerCase();
-        if (isMovie && lowerName.includes('serie')) return;
-        if (!isMovie && !lowerName.includes('serie')) return;
-
-        const shows = []; const seen = new Set();
-        el.querySelectorAll('a[href]').forEach(a => {
-          const s = parseCineHaxCard(a);
-          if (s && s.type === filterType && !seen.has(s.type+s.id)) { 
-            seen.add(s.type+s.id); shows.push(s); 
-          }
-        });
-        if (shows.length) categories.push({ name, list: shows });
-      });
-
-      if (categories.length === 0) app.innerHTML = `<div class="error">No se encontraron resultados.</div>`;
-      else renderHome(categories);
-    } catch (e) { app.innerHTML = `<div class="error">Error: ${escapeHtml(e.message)}</div>`; }
-  }
-
-  async function loadAnime() {
-    app.innerHTML = '<div class="loader">Cargando Anime...</div>';
-    try {
-      const url = `${LATANIME_URL}/animes?p=1`;
-      const html = await httpGet(url, LATANIME_URL + '/');
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      const allAnimes = [];
-      Array.from(doc.querySelectorAll('div.row > div')).forEach(el => {
-        const a = el.querySelector('a');
-        if (!a) return;
-        const titleEl = el.querySelector('div.seriedetails > h3');
-        let title = titleEl ? titleEl.textContent.trim() : 'Anime';
-        const img = el.querySelector('img');
-        let poster = img ? (img.getAttribute('data-src') || img.getAttribute('src')) : '';
-        if(title && poster) allAnimes.push({ id: a.getAttribute('href'), type: 'anime', title, poster: fixUrl(poster, LATANIME_URL) });
-      });
-
-      if (allAnimes.length === 0) return app.innerHTML = '<div class="error">No hay animes.</div>';
-      
-      const mitad = Math.ceil(allAnimes.length / 2);
-      const categories = [
-        { name: 'Películas de Anime', list: allAnimes.slice(0, mitad) },
-        { name: 'Series de Anime', list: allAnimes.slice(mitad) }
-      ];
-      renderHome(categories);
-    } catch (e) { app.innerHTML = `<div class="error">Error: ${escapeHtml(e.message)}</div>`; }
-  }
-
-  async function fetchCineHaxExplore(type, page, genre = '', q = '') {
-    const params = `page=${page}&type=${type}&genre=${genre}&network=&language=&sort=popular&time=week&q=${encodeURIComponent(q)}`;
-    const url = `${CINEHAX_URL}/ajax?action=load_explore_data&${params}`;
-    try {
-      const raw = await httpGet(url, CINEHAX_URL + '/');
-      const json = JSON.parse(raw);
-      if (!json.success || !json.data || !json.data.html) return [];
-      const doc = new DOMParser().parseFromString(json.data.html, 'text/html');
-      const shows = [];
-      doc.querySelectorAll('a[href*="/pelicula/"], a[href*="/serie/"]').forEach(a => {
-        const s = parseCineHaxCard(a);
-        if(s) shows.push(s);
-      });
-      return shows;
-    } catch(e) { return []; }
-  }
-
-  async function loadGenre(id, page = 1) {
-    const parts = id.split(':');
-    const type = parts[0]; const slug = parts[1] || '';
-    if (type === 'anime') {
-      app.innerHTML = `<div class="loader">Cargando Anime...</div>`;
-      try {
-        const url = `${LATANIME_URL}/genero/${slug}?p=${page}`;
-        const html = await httpGet(url, LATANIME_URL + '/');
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const shows = [];
-        Array.from(doc.querySelectorAll('div.row > div')).forEach(el => {
-          const a = el.querySelector('a');
-          if (!a) return;
-          const titleEl = el.querySelector('div.seriedetails > h3');
-          let title = titleEl ? titleEl.textContent.trim() : 'Anime';
-          const img = el.querySelector('img');
-          let poster = img ? (img.getAttribute('data-src') || img.getAttribute('src')) : '';
-          shows.push({ id: a.getAttribute('href'), type: 'anime', title, poster: fixUrl(poster, LATANIME_URL) });
-        });
-        renderGrid(`Anime: ${slug.toUpperCase()}`, shows);
-      } catch(e) { app.innerHTML = `<div class="error">Error: ${e.message}</div>`; }
-    } else {
-      app.innerHTML = `<div class="loader">Cargando...</div>`;
-      const shows = await fetchCineHaxExplore(type, page, slug);
-      renderGrid(slug.toUpperCase(), shows);
-    }
+  async function loadGenre(id) {
+    const [type, slug] = id.split(':');
+    const found = provider.genres.find(g => g[0] === id);
+    app.innerHTML = '<div class="loader">Cargando...</div>';
+    const shows = await provider.explore(type, 1, slug || '');
+    renderGrid(found ? found[1] : (slug || '').toUpperCase(), shows);
   }
 
   function renderSearchView() {
+    if (needProvider()) return;
     app.innerHTML = `
       <div class="search-view">
         <div class="search-box">
-          <input id="q-input" type="text" placeholder="Buscar películas, series o anime..." tabindex="0" />
+          <input id="q-input" type="text" placeholder="Buscar películas o series..." tabindex="0" />
           <button id="btn-search" tabindex="0">Buscar</button>
         </div>
       </div>
@@ -369,154 +419,383 @@
     `;
     const input = document.getElementById('q-input');
     const btn = document.getElementById('btn-search');
-    
     const doSearch = async () => {
       const q = input.value.trim();
       if (!q) return;
       const resContainer = document.getElementById('search-results');
       resContainer.innerHTML = '<div class="loader">Buscando...</div>';
       try {
-        const shows = [];
-        try {
-          const urlCine = `${CINEHAX_URL}/ajax?action=tmdb_live_search&query=${encodeURIComponent(q)}`;
-          const rawCine = await httpGet(urlCine, CINEHAX_URL + '/');
-          const jsonCine = JSON.parse(rawCine);
-          if (jsonCine.success && Array.isArray(jsonCine.data)) {
-            jsonCine.data.forEach(it => {
-              const isTv = it.media_type === 'tv' || (!it.title && it.name);
-              shows.push({ id: String(it.id), type: isTv ? 'tv' : 'movie', title: it.title || it.name || '', poster: it.poster_path ? TMDB_IMG + it.poster_path : null });
-            });
-          }
-        } catch(e){}
-        try {
-          const urlAnime = `${LATANIME_URL}/buscar?q=${encodeURIComponent(q)}`;
-          const htmlAnime = await httpGet(urlAnime, LATANIME_URL + '/');
-          const docAnime = new DOMParser().parseFromString(htmlAnime, 'text/html');
-          Array.from(docAnime.querySelectorAll('div.row > div')).forEach(el => {
-            const a = el.querySelector('a');
-            if (!a) return;
-            const titleEl = el.querySelector('div.seriedetails > h3');
-            let title = titleEl ? titleEl.textContent.trim() : '';
-            const img = el.querySelector('img');
-            let poster = img ? (img.getAttribute('data-src') || img.getAttribute('src')) : '';
-            if(title) shows.push({ id: a.getAttribute('href'), type: 'anime', title, poster: fixUrl(poster, LATANIME_URL) });
-          });
-        } catch(e){}
+        const shows = await provider.search(q);
         if (shows.length > 0) {
           resContainer.innerHTML = `<div class="grid">${shows.map(cardHTML).join('')}</div>`;
           bindCards(resContainer);
-          setTimeout(() => { const first = resContainer.querySelector('.card'); if(first) first.focus(); }, 100);
+          setTimeout(() => { const first = resContainer.querySelector('.card'); if (first) first.focus(); }, 100);
         } else resContainer.innerHTML = '<div class="error">Sin resultados</div>';
-      } catch(e) { resContainer.innerHTML = `<div class="error">Error: ${escapeHtml(e.message)}</div>`; }
+      } catch (e) { resContainer.innerHTML = `<div class="error">Error: ${escapeHtml(e.message)}</div>`; }
     };
     btn.addEventListener('click', doSearch);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
     autoFocus();
   }
 
-  // --- MODAL CORREGIDO CON EXTRACCIÓN DE SINOPSIS REAL ---
-  async function openDetail(type, id) {
-    const modal = document.getElementById('modal');
-    const titleEl = document.getElementById('modal-title');
-    const descEl = document.getElementById('modal-desc');
-    
-    titleEl.textContent = (type === 'tv' ? 'Serie' : type === 'anime' ? 'Anime' : 'Película');
-    descEl.textContent = 'Cargando sinopsis...';
-    modal.classList.add('open');
-    document.getElementById('modal-close').focus();
+  // ---------- Canales ----------
+  function renderCanales() {
+    if (!canales || !canales.lista) {
+      app.innerHTML = '<div class="error">No hay canales cargados. Revisa tu conexión y reabre la app.</div>';
+      return;
+    }
+    const orden = (canales.orden || []).filter(c => canales.lista[c]);
+    Object.keys(canales.lista).forEach(c => { if (!orden.includes(c)) orden.push(c); });
+    let html = '';
+    for (const cat of orden) {
+      const lista = canales.lista[cat] || [];
+      if (!lista.length) continue;
+      html += `<div class="section"><h2>${escapeHtml(cat)}</h2><div class="carousel">` +
+        lista.map((c, i) => `<div class="card chan" tabindex="0" data-cat="${escapeHtml(cat)}" data-idx="${i}">
+          <img src="${escapeHtml(c.logo || '')}" onerror="this.style.opacity=.3" loading="lazy">
+          <div class="meta"><div class="title">${escapeHtml(c.nombre)}</div></div></div>`).join('') +
+        `</div></div>`;
+    }
+    app.innerHTML = html || '<div class="loader">Sin canales</div>';
+    app.querySelectorAll('.card.chan').forEach(el => {
+      el.addEventListener('click', () => {
+        const c = (canales.lista[el.getAttribute('data-cat')] || [])[parseInt(el.getAttribute('data-idx'), 10)];
+        if (c) playChannel(c);
+      });
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter') el.click(); });
+    });
+    autoFocus();
+  }
 
+  // ---------- Reproductor ----------
+  let hls = null, flv = null, resumeModal = false, lastFocus = null;
+
+  function b64ToBuf(b64) {
+    const bin = atob(b64); const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+
+  // Cargador de hls.js que pasa por CapacitorHttp (permite Referer / User-Agent y evita CORS)
+  function makeNativeLoader(baseHeaders) {
+    return class NativeLoader {
+      constructor() {
+        this.stats = { aborted: false, loaded: 0, retry: 0, total: 0, chunkCount: 0, bwEstimate: 0,
+          loading: { start: 0, first: 0, end: 0 }, parsing: { start: 0, end: 0 }, buffering: { start: 0, first: 0, end: 0 } };
+        this.context = null;
+      }
+      destroy() { this.stats.aborted = true; }
+      abort() { this.stats.aborted = true; }
+      getCacheAge() { return null; }
+      load(context, config, callbacks) {
+        this.context = context;
+        const stats = this.stats;
+        stats.loading.start = performance.now();
+        const bin = context.responseType === 'arraybuffer';
+        const headers = Object.assign({}, baseHeaders);
+        if (context.rangeStart !== undefined && context.rangeEnd !== undefined) {
+          headers['Range'] = `bytes=${context.rangeStart}-${context.rangeEnd - 1}`;
+        }
+        window.Capacitor.Plugins.CapacitorHttp.get({ url: context.url, headers, responseType: bin ? 'arraybuffer' : 'text' })
+          .then(res => {
+            if (stats.aborted) return;
+            if (res.status >= 400) { callbacks.onError({ code: res.status, text: 'HTTP ' + res.status }, context, null, stats); return; }
+            const data = bin ? b64ToBuf(res.data) : (typeof res.data === 'string' ? res.data : JSON.stringify(res.data));
+            stats.loading.first = stats.loading.end = performance.now();
+            stats.loaded = stats.total = bin ? data.byteLength : data.length;
+            callbacks.onSuccess({ url: context.url, data }, stats, context, null);
+          })
+          .catch(err => {
+            if (!stats.aborted) callbacks.onError({ code: 0, text: String((err && err.message) || err) }, context, null, stats);
+          });
+      }
+    };
+  }
+
+  function destroyPlayers() {
+    if (hls) { hls.destroy(); hls = null; }
+    if (flv) { flv.destroy(); flv = null; }
+    video.pause(); video.removeAttribute('src'); video.load();
+  }
+
+  function openPlayer(title, resume) {
+    lastFocus = document.activeElement;
+    resumeModal = !!resume;
+    playerBar.textContent = title;
+    playerMsg.textContent = 'Cargando...';
+    playerEl.classList.add('open');
+    setTimeout(() => video.focus(), 100);
+  }
+
+  function stopPlayer() {
+    destroyPlayers();
+    playerEl.classList.remove('open');
+    if (resumeModal) {
+      modal.classList.add('open');
+      const f = mList.querySelector('button') || mClose;
+      setTimeout(() => f.focus(), 100);
+    } else if (lastFocus && document.body.contains(lastFocus)) {
+      setTimeout(() => lastFocus.focus(), 100);
+    }
+  }
+
+  function playHls(url, headers) {
+    if (window.Hls && Hls.isSupported()) {
+      const cfg = {};
+      if (headers && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorHttp) {
+        cfg.loader = makeNativeLoader(headers);
+      }
+      hls = new Hls(cfg);
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+      hls.on(Hls.Events.ERROR, (e, d) => { if (d && d.fatal) playerMsg.textContent = 'No se pudo reproducir este video.'; });
+    } else {
+      video.src = url;
+      video.play().catch(() => {});
+    }
+  }
+
+  video.addEventListener('playing', () => { playerMsg.textContent = ''; });
+
+  function playChannel(c) {
+    openPlayer(c.nombre, false);
+    const u = (c.url || '').toLowerCase();
+    if (u.includes('.flv') && window.mpegts && mpegts.isSupported()) {
+      flv = mpegts.createPlayer({ type: 'flv', isLive: true, url: c.url }, { enableWorker: true });
+      flv.attachMediaElement(video); flv.load(); flv.play().catch(() => {});
+    } else if (u.includes('.m3u')) {
+      playHls(c.url, null);
+    } else {
+      video.src = c.url; video.play().catch(() => {});
+    }
+  }
+
+  // ---------- Modal de detalle / episodios / servidores ----------
+  let modalBack = null;
+
+  function addOpt(container, label, onClick, selected) {
+    const b = document.createElement('button');
+    b.className = 'opt' + (selected ? ' sel' : '');
+    b.tabIndex = 0;
+    b.textContent = label;
+    b.addEventListener('click', onClick);
+    b.addEventListener('keydown', (e) => { if (e.key === 'Enter') b.click(); });
+    container.appendChild(b);
+    return b;
+  }
+
+  function setModal(title, desc, back) {
+    mTitle.textContent = title;
+    mDesc.textContent = desc || '';
+    mDesc.style.display = desc ? '' : 'none';
+    mRow.innerHTML = ''; mList.innerHTML = '';
+    modalBack = back || null;
+    mClose.textContent = modalBack ? 'Volver' : 'Cerrar';
+  }
+
+  function focusModal() {
+    setTimeout(() => {
+      const f = mList.querySelector('button') || mRow.querySelector('button') || mClose;
+      f.focus();
+    }, 100);
+  }
+
+  function closeModal() {
+    modal.classList.remove('open');
+    modalBack = null;
+    if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+    else { const a = document.querySelector('#main-nav button.active'); if (a) a.focus(); }
+  }
+
+  // ---------- Pantalla de detalle ----------
+  const detail = document.getElementById('detail');
+  const dTitle = document.getElementById('d-title'), dMeta = document.getElementById('d-meta'),
+        dDesc = document.getElementById('d-desc'), dActions = document.getElementById('d-actions'),
+        dEps = document.getElementById('d-eps');
+  let detailCard = null;
+
+  function closeDetail() {
+    detail.classList.remove('open');
+    detail.style.backgroundImage = '';
+    if (detailCard && document.body.contains(detailCard)) detailCard.focus();
+    detailCard = null;
+  }
+
+  function dBtn(label, cls, onClick) {
+    const b = document.createElement('button');
+    b.className = 'd-btn ' + (cls || '');
+    b.tabIndex = 0; b.textContent = label;
+    b.addEventListener('click', onClick);
+    b.addEventListener('keydown', (e) => { if (e.key === 'Enter') b.click(); });
+    dActions.appendChild(b);
+    return b;
+  }
+
+  function metaHTML(M, d) {
+    const parts = [M.type === 'tv' ? 'Serie' : 'Película'];
+    const gen = Array.isArray(d.genres) ? d.genres.join(' · ') : (d.genres || '');
+    if (gen) parts.push(gen);
+    const year = d.year || d.releaseInfo || '';
+    if (year) parts.push(year);
+    let h = parts.map(p => '<span>' + escapeHtml(String(p)) + '</span>').join('<span class="d-dot">•</span>');
+    const rt = d.rating || d.imdbRating || d.imdb;
+    if (rt) h += '<span class="d-imdb">IMDb</span><span>' + escapeHtml(String(rt)) + '</span>';
+    return h;
+  }
+
+  async function openDetail(type, id, title, poster, cardEl) {
+    detailCard = cardEl || document.activeElement;
+    const M = { type, id, title: title || (type === 'tv' ? 'Serie' : 'Película'), poster: poster || '', season: null, eps: {}, seasons: [] };
+    dTitle.textContent = M.title;
+    dMeta.innerHTML = metaHTML(M, {});
+    dDesc.textContent = 'Cargando sinopsis...';
+    dActions.innerHTML = ''; dEps.innerHTML = '';
+    detail.style.backgroundImage = M.poster ? `url('${M.poster}')` : 'none';
+    detail.scrollTop = 0;
+    detail.classList.add('open');
+    detail.tabIndex = -1; detail.focus();
     try {
-      let url = '';
-      if (type === 'movie') url = `${CINEHAX_URL}/pelicula/${id}`;
-      else if (type === 'tv') url = `${CINEHAX_URL}/serie/${id}`;
-      else if (type === 'anime') url = id;
-
-      const html = await httpGet(url, type === 'anime' ? LATANIME_URL + '/' : CINEHAX_URL + '/');
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      
-      let synopsis = '';
-      let realTitle = '';
-
-      if (type === 'anime') {
-        // Lógica de Latanime
-        const titleNode = doc.querySelector('h1, .anime-title');
-        if (titleNode) realTitle = titleNode.textContent.trim();
-        
-        // Buscar el contenedor de sinopsis específico de Latanime
-        const descNode = doc.querySelector('.sinopsis, .description, .anime-synopsis, #info p');
-        if (descNode) synopsis = descNode.textContent.trim();
-        else {
-          // Si no encuentra la clase, busca el párrafo más largo (suele ser la sinopsis)
-          const ps = Array.from(doc.querySelectorAll('p'));
-          const longestP = ps.reduce((a, b) => a.textContent.length > b.textContent.length ? a : b, {textContent: ''});
-          if(longestP.textContent.length > 50) synopsis = longestP.textContent.trim();
-        }
-      } else {
-        // Lógica de CineHax
-        const titleNode = doc.querySelector('h1, .title');
-        if (titleNode) realTitle = titleNode.textContent.trim();
-
-        // CineHax suele usar .description para la sinopsis
-        const descNode = doc.querySelector('.description, .synopsis, .overview');
-        if (descNode) synopsis = descNode.textContent.trim();
-        else {
-          // Si no, busca un párrafo con clase text-muted o similar
-          const p = doc.querySelector('p.text-muted, p.description, .movie-info p');
-          if (p) synopsis = p.textContent.trim();
-          else {
-             // Buscar párrafo largo como último recurso
-             const ps = Array.from(doc.querySelectorAll('p'));
-             const longestP = ps.reduce((a, b) => a.textContent.length > b.textContent.length ? a : b, {textContent: ''});
-             if(longestP.textContent.length > 50) synopsis = longestP.textContent.trim();
-          }
-        }
-      }
-
-      titleEl.textContent = realTitle || titleEl.textContent;
-      
-      // Limpiamos el texto de la sinopsis de posibles saltos de línea excesivos
-      if (synopsis) {
-        synopsis = synopsis.replace(/\s+/g, ' ').trim();
-      }
-
-      descEl.textContent = synopsis || 'No se encontró sinopsis detallada para este título.';
+      const d = await provider.detail(type, id);
+      M.d = d;
+      if (d.title) { M.title = d.title; dTitle.textContent = d.title; }
+      const bg = d.backdrop || d.background || d.poster || M.poster;
+      if (bg) detail.style.backgroundImage = `url('${bg}')`;
+      dMeta.innerHTML = metaHTML(M, d);
+      dDesc.textContent = d.overview || 'No se encontró sinopsis para este título.';
+      M.seasons = d.seasons || [];
+      renderDetailActions(M);
+      if (type === 'tv' && M.seasons.length) selectSeason(M, M.seasons[0]);
     } catch (e) {
-      descEl.textContent = 'Error de conexión al cargar la sinopsis. Revisa tu conexión a internet.';
+      dDesc.textContent = 'Error de conexión al cargar la ficha. Revisa tu conexión a internet.';
       console.error(e);
     }
   }
 
-  function closeModal() {
-    document.getElementById('modal').classList.remove('open');
-    const activeBtn = document.querySelector('aside button.active');
-    if(activeBtn) activeBtn.focus();
+  function renderDetailActions(M) {
+    dActions.innerHTML = '';
+    if (M.type === 'movie') {
+      const p = dBtn('▶ Reproducir', 'play', () => showServers({ type: 'movie', id: M.id }, M.title));
+      setTimeout(() => p.focus(), 80);
+    } else {
+      M.seasons.forEach(n => dBtn('Temporada ' + n, n === M.season ? 'active' : '', () => selectSeason(M, n)));
+    }
   }
 
+  async function selectSeason(M, n) {
+    M.season = n;
+    renderDetailActions(M);
+    if (!M.eps[n]) {
+      dEps.innerHTML = '<div class="loader" style="padding:2vh;font-size:1.4vw">Cargando episodios...</div>';
+      try { M.eps[n] = await provider.episodes(M.id, n); } catch (e) { M.eps[n] = []; }
+      if (M.season !== n) return;
+    }
+    renderEpisodes(M);
+    const act = dActions.querySelector('.d-btn.active'); if (act) act.focus();
+  }
+
+  function renderEpisodes(M) {
+    const eps = M.eps[M.season] || [];
+    dEps.innerHTML = '';
+    if (!eps.length) { dEps.innerHTML = '<div class="loader" style="padding:2vh;font-size:1.4vw">No se encontraron episodios.</div>'; return; }
+    eps.forEach(ep => {
+      const c = document.createElement('div');
+      c.className = 'ep-card'; c.tabIndex = 0;
+      const img = ep.thumbnail || ep.thumb || ep.image || ep.still || M.poster || '';
+      if (img) c.style.backgroundImage = `url('${img}')`;
+      const dur = ep.runtime || ep.duration || '';
+      c.innerHTML = `<div class="ep-info"><span class="ep-num">EPISODIO ${escapeHtml(String(ep.number))}</span>
+        <div class="ep-title">${escapeHtml(ep.title || 'Episodio ' + ep.number)}</div>
+        ${dur ? `<div class="ep-dur">⏱ ${escapeHtml(String(dur))}${/\d$/.test(String(dur)) ? ' min' : ''}</div>` : ''}</div>`;
+      c.addEventListener('click', () => showServers({ type: 'tv', id: M.id, season: M.season, episode: ep.number }, `${M.title} · T${M.season}E${ep.number}`));
+      c.addEventListener('keydown', (e) => { if (e.key === 'Enter') c.click(); });
+      dEps.appendChild(c);
+    });
+  }
+
+  // ---------- Modal de servidores ----------
+  async function showServers(media, label) {
+    lastFocus = document.activeElement;
+    setModal(label, 'Buscando servidores...', null);
+    modal.classList.add('open');
+    mClose.focus();
+    if (!extractor) { mDesc.textContent = 'El extractor de video no está disponible.'; return; }
+    let servers = [];
+    try { servers = await extractor.servers(media); } catch (e) { console.error(e); }
+    if (!servers.length) { mDesc.textContent = 'No se encontraron servidores para este título.'; return; }
+    mDesc.textContent = 'Elige un servidor:';
+    servers.forEach(s => addOpt(mList, s.name, () => playServer(s, label)));
+    focusModal();
+  }
+
+  async function playServer(server, label) {
+    mDesc.textContent = 'Obteniendo video...';
+    try {
+      const v = await extractor.extract(server.src);
+      modal.classList.remove('open');
+      openPlayer(label, true);
+      playHls(v.source, v.headers);
+    } catch (e) {
+      mDesc.textContent = 'No se pudo obtener el video de este servidor. Prueba con otro.';
+      console.error(e);
+    }
+  }
+
+  mClose.addEventListener('click', () => { if (modalBack) modalBack(); else closeModal(); });
+  mClose.addEventListener('keydown', (e) => { if (e.key === 'Enter') mClose.click(); });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' || e.key === 'Escape' || e.key === 'GoBack') {
+      if (playerEl.classList.contains('open')) { e.preventDefault(); stopPlayer(); return; }
+      if (modal.classList.contains('open')) { mClose.click(); return; }
+      if (detail.classList.contains('open')) { e.preventDefault(); closeDetail(); }
+    }
+  });
+
+  // ---------- Menú ----------
   navButtons.forEach(b => {
     b.addEventListener('click', () => {
+      detail.classList.remove('open'); detailCard = null;
       navButtons.forEach(x => x.classList.remove('active'));
       b.classList.add('active');
       const v = b.getAttribute('data-view');
-      if (v === 'movies') loadCategorizedHome('movie');
-      else if (v === 'tv') loadCategorizedHome('tv');
-      else if (v === 'anime') loadAnime();
+      vistaActual = v;
+      if (v === 'movies') showHome('movie');
+      else if (v === 'tv') showHome('tv');
+      else if (v === 'canales') renderCanales();
       else if (v === 'genres') renderGenres();
       else if (v === 'search') renderSearchView();
     });
     b.addEventListener('keydown', (e) => { if (e.key === 'Enter') b.click(); });
   });
 
-  document.getElementById('modal-close').addEventListener('click', closeModal);
-  document.getElementById('modal-close').addEventListener('keydown', (e) => { if(e.key === 'Enter') closeModal(); });
-  
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' || e.key === 'Escape') {
-      if (document.getElementById('modal').classList.contains('open')) closeModal();
+  // ---------- Inicio ----------
+  // 1) Abre al instante con lo guardado. 2) Revisa version.json en segundo plano.
+  // 3) Lo nuevo se guarda; los canales se refrescan solos, el proveedor/extractor se usan al próximo arranque.
+  (async () => {
+    let completo = false;
+    try { completo = cargarDesdeCache(); } catch (e) { console.error(e); }
+    if (!completo) {
+      setBoot('Descargando contenido...');
+      try { await revisarActualizaciones(); } catch (e) { console.error(e); }
+      try { cargarDesdeCache(); } catch (e) { console.error(e); }
     }
-  });
+    renderCanales();
+    setTimeout(() => navButtons[0].focus(), 200);
 
-  loadCategorizedHome('movie');
-  setTimeout(() => navButtons[0].focus(), 200);
+    if (completo) {
+      revisarActualizaciones().then(act => {
+        if (act.includes(ARCHIVOS[0].cache)) {
+          try { canales = JSON.parse(MEM[ARCHIVOS[0].cache] || LS.get(ARCHIVOS[0].cache) || 'null'); } catch (e) {}
+          const enNav = document.activeElement && document.activeElement.closest && document.activeElement.closest('#main-nav');
+          if (vistaActual === 'canales' && enNav && !detail.classList.contains('open')) {
+            renderCanales();
+            setTimeout(() => navButtons[0].focus(), 50);
+          }
+        }
+      }).catch(e => console.warn(e));
+    }
+  })();
 
 })();
 </script>
