@@ -1,0 +1,32 @@
+name: Generar Carpeta Android y Subirla
+
+on: workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Generar carpeta Android
+        run: npx cap add android
+
+      - name: Guardar carpeta en GitHub
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add android/ -f
+          git commit -m "Subiendo carpeta Android completa"
+          git push
