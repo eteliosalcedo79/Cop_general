@@ -1,4 +1,4 @@
-name: Compilar APK 
+name: Compilar APK
 
 on: workflow_dispatch
 
@@ -31,6 +31,19 @@ jobs:
         
       - name: Generar iconos desde logo.png
         run: npx @capacitor/assets generate --android
+
+      # --- ESTO ARREGLA LOS XML AUTOMÁTICAMENTE ---
+      - name: Configurar iconos adaptativos
+        run: |
+          cat << 'EOF' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@mipmap/ic_launcher_background" />
+              <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+          </adaptive-icon>
+          EOF
+          cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+      # --------------------------------------------
         
       - name: Compilar APK
         run: |
