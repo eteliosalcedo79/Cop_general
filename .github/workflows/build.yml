@@ -29,16 +29,6 @@ jobs:
       - name: Sincronizar archivos web
         run: npx cap sync
         
-      - name: Generar iconos desde logo.png
-        run: npx @capacitor/assets generate --android
-
-      # --- ESTO ES LO QUE OBLIGA A ANDROID A USAR TU LOGO ---
-      - name: Eliminar XML viejos (Forzar íconos PNG)
-        run: |
-          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
-      # ------------------------------------------------------
-        
       - name: Compilar APK
         run: |
           cd android
