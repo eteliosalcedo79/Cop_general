@@ -1,5 +1,6 @@
-name: Compilar APK y Generar Proyecto Android
-on: workflow_dispatch   # Solo manual
+name: Compilar APK con mis archivos
+
+on: workflow_dispatch
 
 jobs:
   build:
@@ -20,16 +21,13 @@ jobs:
           
       - name: Instalar dependencias
         run: npm install
-        
-      - name: Generar proyecto Android
-        run: npx cap add android
 
-      # --- ESTO ES LO QUE TE FALTABA PARA LOS ICONOS ---
-      # Asegúrate de tener un archivo logo.png (1024x1024) en la raíz de tu repo
-      - name: Generar Iconos y Splash Screens
-        run: npx @capacitor/assets generate --android
-      # -------------------------------------------------
+      # ESTO ARREGLA EL NOMBRE DE LA CARPETA SI ESTÁ EN MAYÚSCULA
+      - name: Renombrar carpeta a minúscula
+        run: |
+          if [ -d "Android" ]; then mv Android android; fi
         
+      # Sincroniza los archivos de la carpeta www con tu proyecto Android
       - name: Sincronizar archivos web
         run: npx cap sync
         
@@ -44,10 +42,3 @@ jobs:
         with:
           name: Mi-App-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
-      # --- ESTO ES LO NUEVO PARA DESCARGAR TODO EL PROYECTO ---
-      - name: Empaquetar todo el proyecto Android (Fuente)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Proyecto-Android-Completo
-          path: android/  # <--- Aquí le decimos que guarde TODA la carpeta
