@@ -765,8 +765,16 @@
     video.pause(); video.removeAttribute('src'); video.load();
   }
 
+  let srvBtn = null;   // servidor elegido (para devolverle el foco al volver del reproductor)
+  function restoreFocus(el) {
+    if (el && document.body.contains(el)) rcFocus(el);
+    else { const a = document.querySelector('#main-nav button.active'); if (a) a.focus(); }
+  }
   function openPlayer(title, resume) {
-    lastFocus = document.activeElement;
+    /* Canal: el origen es la tarjeta del canal. Película/serie (resume): el origen (Reproducir / capítulo)
+       ya se guardó al abrir el modal; aquí solo se recuerda qué servidor se eligió. */
+    if (resume) { if (mList.contains(document.activeElement)) srvBtn = document.activeElement; }
+    else lastFocus = document.activeElement;
     resumeModal = !!resume;
     playerBar.textContent = title;
     playerMsg.textContent = 'Cargando...';
@@ -779,10 +787,11 @@
     playerEl.classList.remove('open');
     if (resumeModal) {
       modal.classList.add('open');
-      const f = mList.querySelector('button') || mClose;
+      const f = (srvBtn && mList.contains(srvBtn)) ? srvBtn : (mList.querySelector('button') || mClose);
       setTimeout(() => f.focus(), 100);
-    } else if (lastFocus && document.body.contains(lastFocus)) {
-      setTimeout(() => lastFocus.focus(), 100);
+    } else {
+      const t = lastFocus;
+      setTimeout(() => restoreFocus(t), 100);   // canal: vuelve al canal seleccionado
     }
   }
 
@@ -898,8 +907,7 @@
   function closeModal() {
     modal.classList.remove('open');
     modalBack = null;
-    if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
-    else { const a = document.querySelector('#main-nav button.active'); if (a) a.focus(); }
+    restoreFocus(lastFocus);   // película: Reproducir · serie: capítulo elegido
   }
 
   // ---------- Pantalla de detalle ----------
@@ -912,8 +920,8 @@
   function closeDetail() {
     detail.classList.remove('open');
     detail.style.backgroundImage = '';
-    if (detailCard && document.body.contains(detailCard)) detailCard.focus();
-    detailCard = null;
+    const dc = detailCard; detailCard = null;
+    restoreFocus(dc);   // vuelve al póster elegido
   }
 
   function dBtn(label, cls, onClick) {
@@ -1089,11 +1097,18 @@
   try {
     const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
     if (App && App.addListener) App.addListener('backButton', () => handleBack());
+    else plog('ATRÁS', 'Plugin App de Capacitor no disponible: se usa el historial como respaldo');
   } catch (e) { console.warn('No se pudo registrar backButton', e); }
+
+  // Respaldo: si Android entrega Atrás al WebView (historial) en vez de a JS, se captura aquí y no se cierra la app
+  try {
+    history.pushState({ ph: 1 }, '');
+    window.addEventListener('popstate', () => { history.pushState({ ph: 1 }, ''); handleBack(); });
+  } catch (e) { console.warn('No se pudo preparar el historial', e); }
 
   // Control remoto / teclado
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' || e.key === 'Escape' || e.key === 'GoBack') {
+    if (e.key === 'Backspace' || e.key === 'Escape' || e.key === 'GoBack' || e.key === 'BrowserBack' || e.keyCode === 4) {
       const t = e.target;
       if (e.key === 'Backspace' && t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
       e.preventDefault();
