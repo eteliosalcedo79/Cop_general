@@ -20,10 +20,10 @@
 
   /* --- BARRA SUPERIOR --- */
   #topbar { height: var(--bar-h); flex: none; display: flex; align-items: center; padding: 0 1vw;
-    background: linear-gradient(180deg, #0b1a3a 0%, #0a1224 100%); border-bottom: 1px solid #1c2a4a; z-index: 60; }
+    background: var(--sidebar); border-bottom: 1px solid var(--border); z-index: 60; }
   #main-nav { display: flex; width: 100%; gap: 1vw; }
   #main-nav button { flex: 1; display: flex; align-items: center; justify-content: center; gap: .7vw;
-    background: transparent; color: #8da0c4; border: 3px solid transparent; border-radius: 14px; height: calc(var(--bar-h) * .72);
+    background: transparent; color: var(--muted); border: 3px solid transparent; border-radius: 14px; height: calc(var(--bar-h) * .72);
     font-size: 1.4vw; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: all .2s; }
   #main-nav button svg { width: 1.8vw; height: 1.8vw; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   /* seleccionado: rojo */
@@ -126,7 +126,21 @@
   .modal.srv .modal-inner button.opt { flex: 0 0 auto; background: transparent; border: 2px solid transparent; border-radius: 10px; padding: 14px 16px; font-size: .95rem; font-weight: 700; }
   .modal.srv .modal-inner button.opt.sel { border-color: #fff; }
   .modal.srv .modal-inner button.opt:focus { border-color: var(--accent); box-shadow: none; color: #fff; }
-  .modal.srv #modal-close { flex: 0 0 auto; margin: 8px 10px 10px; padding: 10px 16px; font-size: .95rem; }
+
+  /* INICIO DE SESIÓN */
+  #login { position: fixed; inset: 0; z-index: 300; display: none; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 30%, var(--card) 0%, var(--bg) 70%); }
+  #login.open { display: flex; }
+  .login-card { width: min(520px, 80vw); display: flex; flex-direction: column; gap: 2vh; padding: 5vh 4vw;
+    background: var(--sidebar); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,.6); }
+  .login-card h2 { margin: 0 0 1vh; text-align: center; font-size: clamp(1.3rem, 2.2vw, 1.8rem); color: var(--accent); }
+  .login-card input { background: var(--card); color: var(--text); border: 2px solid var(--border); border-radius: 8px;
+    padding: 2vh 1.5vw; font-size: clamp(1rem, 1.6vw, 1.3rem); }
+  .login-card input:focus { border-color: var(--accent); box-shadow: 0 0 12px rgba(229,9,20,.45); }
+  .login-card button { background: var(--accent); color: #fff; border: 2px solid var(--accent); border-radius: 8px; padding: 2vh 1.5vw;
+    font-size: clamp(1rem, 1.5vw, 1.2rem); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
+  .login-card button:focus { border-color: #fff; box-shadow: 0 0 18px rgba(229,9,20,.7); }
+  #lg-msg { min-height: 1.4em; text-align: center; color: #ffb3b8; font-size: clamp(.85rem, 1.2vw, 1.05rem); }
 
   /* REPRODUCTOR */
   #player { position: fixed; inset: 0; background: #000; z-index: 200; display: none; flex-direction: column; }
@@ -148,7 +162,7 @@
   .pb-btn.focused { border-color: var(--accent); background: rgba(229,9,20,.22); box-shadow: 0 0 0 3px rgba(229,9,20,.3); }
   .pb-live { margin-left: auto; display: flex; align-items: center; gap: 7px; font-size: .75rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; pointer-events: none; user-select: none; }
   .pb-dot { width: 9px; height: 9px; border-radius: 50%; background: #ff1744; box-shadow: 0 0 8px rgba(255,23,68,.7); animation: pbPulse 1.4s ease-in-out infinite; }
-  .pb-live.vod .pb-dot { background: #00a8ff; box-shadow: 0 0 8px rgba(0,168,255,.7); animation: none; }
+  .pb-live.vod .pb-dot { background: #fff; box-shadow: none; animation: none; }
   @keyframes pbPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.85); } }
   .pb-progress { display: none; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 0 clamp(10px, 2vw, 20px); margin-bottom: 4px; }
   .pb-time { width: 52px; text-align: center; font-size: .95rem; font-weight: 700; color: rgba(255,255,255,.7); white-space: nowrap; }
@@ -187,8 +201,8 @@
   .d-actions::-webkit-scrollbar { display: none; }
   /* Botones de temporada: tamaño de la prueba */
   .d-btn { flex: 0 0 auto; white-space: nowrap; background: rgba(255,255,255,.08); color: rgba(255,255,255,.7); border: 2px solid transparent; border-radius: 30px; padding: 8px 20px; font-size: clamp(.85rem, 1.2vw, 1rem); font-weight: 700; cursor: pointer; transition: all .2s ease; }
-  .d-btn:focus { border-color: #00a8ff; background: rgba(0,168,255,.2); color: #fff; transform: scale(1.05); }
-  .d-btn.active { background: #00a8ff; color: #001a2b; font-weight: 800; box-shadow: 0 4px 15px rgba(0,168,255,.4); }
+  .d-btn:focus { border-color: var(--accent); background: rgba(229,9,20,.25); color: #fff; transform: scale(1.05); }
+  .d-btn.active { background: var(--accent); color: #fff; font-weight: 800; box-shadow: 0 4px 15px rgba(229,9,20,.4); }
   .d-btn.active:focus { border-color: #fff; box-shadow: none; }
   /* Botón Reproducir: tamaño de la prueba, rojo del index */
   .d-btn.play { display: flex; align-items: center; gap: 10px; background: var(--accent); color: #fff; border: 2px solid var(--accent); padding: clamp(10px, 1.4vh, 14px) clamp(22px, 2.6vw, 34px); border-radius: 30px; font-size: clamp(.9rem, 1.3vw, 1.05rem); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
@@ -198,7 +212,7 @@
   /* Card de capítulo: 200 x 125 como la prueba */
   .ep-card { flex: 0 0 200px; min-width: 200px; max-width: 200px; height: 125px; border-radius: 14px; overflow: hidden; position: relative; background: var(--card) center/cover no-repeat; border: 2px solid transparent; cursor: pointer; display: flex; align-items: flex-end; transition: all .2s ease; }
   .ep-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.7) 45%, rgba(0,0,0,.15) 100%); }
-  .ep-card:focus { border-color: #00a8ff; box-shadow: none; transform: scale(1.04); }
+  .ep-card:focus { border-color: var(--accent); box-shadow: none; transform: scale(1.04); }
   .ep-info { position: relative; width: 100%; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
   .ep-num { align-self: flex-start; font-size: .7rem; font-weight: 800; color: #fff; background: rgba(255,255,255,.18); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 1px; }
   .ep-title { font-size: 1.05rem; font-weight: 700; color: #fff; line-height: 1.1; text-shadow: 0 2px 6px rgba(0,0,0,.8); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -244,12 +258,21 @@
 </div>
 
 <div class="modal" id="modal">
-  <div class="modal-inner">
+  <div class="modal-inner" id="modal-inner" tabindex="-1">
     <h3 id="modal-title">Cargando...</h3>
     <p id="modal-desc"></p>
     <div class="modal-row" id="modal-row"></div>
     <div class="modal-list" id="modal-list"></div>
-    <button id="modal-close" tabindex="0">Cerrar</button>
+  </div>
+</div>
+
+<div id="login">
+  <div class="login-card">
+    <h2>Iniciar sesión</h2>
+    <input id="lg-user" type="text" placeholder="Usuario" autocomplete="off" autocapitalize="off" spellcheck="false" tabindex="0">
+    <input id="lg-pass" type="password" placeholder="Contraseña" autocomplete="off" tabindex="0">
+    <div id="lg-msg"></div>
+    <button id="lg-btn" type="button" tabindex="0">Entrar</button>
   </div>
 </div>
 
@@ -341,14 +364,14 @@
   function panel() {
     if (el) return el;
     el = document.createElement('div'); el.id = 'phcPanel';
-    el.style.cssText = 'position:fixed;inset:3% 6%;z-index:99999;background:#0b1220;color:#e6edf7;border:2px solid ' + RED + ';border-radius:14px;display:none;flex-direction:column;overflow:hidden;';
+    el.style.cssText = 'position:fixed;inset:3% 6%;z-index:99999;background:#0d1117;color:#e6edf3;border:2px solid ' + RED + ';border-radius:14px;display:none;flex-direction:column;overflow:hidden;';
     const bar = document.createElement('div');
-    bar.style.cssText = 'display:flex;gap:14px;align-items:center;padding:12px 16px;background:#111b30;border-bottom:1px solid #2a3a5c;flex:0 0 auto;flex-wrap:wrap;';
+    bar.style.cssText = 'display:flex;gap:14px;align-items:center;padding:12px 16px;background:#161b22;border-bottom:1px solid #30363d;flex:0 0 auto;flex-wrap:wrap;';
     const mk = (id, txt) => {
       const b = document.createElement('button'); b.id = id; b.type = 'button'; b.textContent = txt;
-      b.style.cssText = 'font:700 20px/1 sans-serif;padding:12px 26px;border-radius:10px;border:2px solid #3b4d75;background:#18243f;color:#e6edf7;outline:none;';
+      b.style.cssText = 'font:700 20px/1 sans-serif;padding:12px 26px;border-radius:10px;border:2px solid #30363d;background:#1b2230;color:#e6edf3;outline:none;';
       b.addEventListener('focus', () => { b.style.borderColor = RED; b.style.background = '#4a0d12'; });
-      b.addEventListener('blur', () => { b.style.borderColor = '#3b4d75'; b.style.background = '#18243f'; });
+      b.addEventListener('blur', () => { b.style.borderColor = '#30363d'; b.style.background = '#1b2230'; });
       return b;
     };
     const bClose = mk('phcClose', 'Cerrar'), bCopy = mk('phcCopy', 'Copiar'), bPlay = mk('phcPlay', 'Reproducir'), bReg = mk('phcReg', 'Registro');
@@ -408,7 +431,7 @@
   }
   function mkToggle() {
     tbtn = document.createElement('button'); tbtn.type = 'button'; tbtn.tabIndex = -1;
-    tbtn.style.cssText = 'position:fixed;top:2px;right:2px;z-index:100001;font:700 11px/1 sans-serif;padding:3px 7px;border-radius:6px;border:1px solid #3b4d75;color:#fff;outline:none;opacity:.85;';
+    tbtn.style.cssText = 'position:fixed;top:2px;right:2px;z-index:100001;font:700 11px/1 sans-serif;padding:3px 7px;border-radius:6px;border:1px solid #30363d;color:#fff;outline:none;opacity:.85;';
     let t = 0;
     tbtn.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); if (isOpen()) return; if (Date.now() - t < 500) { setMode(!MODE); } else { openLog(); } t = Date.now(); });
     document.body.appendChild(tbtn); paintToggle();
@@ -471,7 +494,7 @@
   const mDesc = document.getElementById('modal-desc');
   const mRow = document.getElementById('modal-row');
   const mList = document.getElementById('modal-list');
-  const mClose = document.getElementById('modal-close');
+  const mInner = document.getElementById('modal-inner');   // el modal solo tiene opciones; se cierra con Atrás
   const playerEl = document.getElementById('player');
   const playerBar = document.getElementById('player-bar');
   const playerMsg = document.getElementById('player-msg');
@@ -596,6 +619,7 @@
   function autoFocus() {
     setTimeout(() => {
       /* Si el foco ya está en algún lado (p. ej. la barra de secciones tras pulsar OK), no se roba */
+      if (loginOpen()) return;
       const ae = document.activeElement;
       if (ae && ae !== document.body && document.body.contains(ae)) return;
       const first = app.querySelector('.card, .genre-card, input, button');
@@ -824,7 +848,7 @@
     playerEl.classList.remove('open');
     if (resumeModal) {
       modal.classList.add('open');
-      const f = (srvBtn && mList.contains(srvBtn)) ? srvBtn : (mList.querySelector('button') || mClose);
+      const f = (srvBtn && mList.contains(srvBtn)) ? srvBtn : (mList.querySelector('button') || mInner);
       setTimeout(() => f.focus(), 100);
     } else {
       const t = lastFocus;
@@ -1201,12 +1225,11 @@
     mDesc.style.display = desc ? '' : 'none';
     mRow.innerHTML = ''; mList.innerHTML = '';
     modalBack = back || null;
-    mClose.textContent = modalBack ? 'Volver' : 'Cerrar';
   }
 
   function focusModal() {
     setTimeout(() => {
-      const f = mList.querySelector('button') || mRow.querySelector('button') || mClose;
+      const f = mList.querySelector('button') || mRow.querySelector('button') || mInner;
       f.focus();
     }, 100);
   }
@@ -1312,10 +1335,15 @@
       c.className = 'ep-card'; c.tabIndex = 0;
       const img = ep.thumbnail || ep.thumb || ep.image || ep.still || M.poster || '';
       if (img) c.style.backgroundImage = `url('${img}')`;
-      const dur = ep.runtime || ep.duration || '';
+      let title = String(ep.title || ''), dur = String(ep.runtime || ep.duration || '');
+      // Limpieza por si el título llega con la duración y la fecha pegadas ("Nombre 64 min · 19 sept 2024")
+      const mt = title.match(/^(.*?)\s*((?:\d+\s*h\s*)?\d+\s*min)\b.*$/i);
+      if (mt) { title = mt[1].trim(); if (!dur) dur = mt[2]; }
+      if (/^\d+$/.test(dur)) dur += ' min';
+      if (!title) title = 'Episodio ' + ep.number;
       c.innerHTML = `<div class="ep-info"><span class="ep-num">EPISODIO ${escapeHtml(String(ep.number))}</span>
-        <div class="ep-title">${escapeHtml(ep.title || 'Episodio ' + ep.number)}</div>
-        ${dur ? `<div class="ep-dur">⏱ ${escapeHtml(String(dur))}${/\d$/.test(String(dur)) ? ' min' : ''}</div>` : ''}</div>`;
+        <div class="ep-title">${escapeHtml(title)}</div>
+        ${dur ? `<div class="ep-dur">${escapeHtml(dur)}</div>` : ''}</div>`;
       c.addEventListener('click', () => showServers({ type: 'tv', id: M.id, season: M.season, episode: ep.number }, `${M.title} · T${M.season}E${ep.number}`));
       c.addEventListener('keydown', (e) => { if (e.key === 'Enter') c.click(); });
       dEps.appendChild(c);
@@ -1327,7 +1355,7 @@
     lastFocus = document.activeElement;
     setModal(label, 'Buscando servidores...', null, true);
     modal.classList.add('open');
-    mClose.focus();
+    mInner.focus();
     plog('SERVIDORES', 'Buscando para ' + label);
     if (!extractor) { mDesc.textContent = 'El extractor de video no está disponible.'; plog('SERVIDORES', 'extractor NO disponible'); return; }
     let servers = [];
@@ -1374,8 +1402,7 @@
     }
   }
 
-  mClose.addEventListener('click', () => { if (modalBack) modalBack(); else closeModal(); });
-  mClose.addEventListener('keydown', (e) => { if (e.key === 'Enter') mClose.click(); });
+  function atrasModal() { if (modalBack) modalBack(); else closeModal(); }
 
   // ---------- Botón Atrás ----------
   let _ultimoAtras = 0;
@@ -1384,14 +1411,14 @@
     if (ahora - _ultimoAtras < 300) return;   // evita doble disparo
     _ultimoAtras = ahora;
     if (PHC.isOpen()) { PHC.close(); return; }   // la consola se cierra primero
+    if (loginOpen()) { salirApp(); return; }      // sin sesión, Atrás cierra la app
     if (playerEl.classList.contains('open')) { if (pbar.menuOpen) { pbar.closeMenu(); return; } stopPlayer(); return; }
-    if (modal.classList.contains('open')) { mClose.click(); return; }
+    if (modal.classList.contains('open')) { atrasModal(); return; }
     if (detail.classList.contains('open')) { closeDetail(); return; }
     if (vistaActual !== 'canales') { navButtons[0].click(); navButtons[0].focus(); return; }
     // En Canales: confirmar salida
     lastFocus = document.activeElement;
     setModal('¿Salir de la aplicación?', '', null);
-    mClose.textContent = 'Cancelar';
     addOpt(mList, 'Salir', () => {
       const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
       if (App && App.exitApp) App.exitApp(); else window.close();
@@ -1481,13 +1508,13 @@
     const k = e.key;
     if (k !== 'ArrowUp' && k !== 'ArrowDown' && k !== 'ArrowLeft' && k !== 'ArrowRight') return;
     if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
-    if (PHC.isOpen() || playerEl.classList.contains('open')) return;   // consola y reproductor llevan lo suyo
+    if (PHC.isOpen() || playerEl.classList.contains('open') || loginOpen()) return;   // consola, reproductor y login llevan lo suyo
     const ae = document.activeElement;
 
     // Modal (servidores / salir): ↑/↓ recorren las opciones
     if (modal.classList.contains('open')) {
       e.preventDefault();
-      const items = Array.from(modal.querySelectorAll('#modal-row button, #modal-list button, #modal-close'));
+      const items = Array.from(modal.querySelectorAll('#modal-row button, #modal-list button'));
       const i = items.indexOf(ae);
       const t = k === 'ArrowDown' ? items[i < 0 ? 0 : Math.min(i + 1, items.length - 1)]
               : k === 'ArrowUp' ? items[i < 0 ? 0 : Math.max(i - 1, 0)] : null;
@@ -1564,6 +1591,145 @@
     b.addEventListener('keydown', (e) => { if (e.key === 'Enter') b.click(); });
   });
 
+  // ---------- Inicio de sesión ----------
+  // usuarios.json (en el repositorio): { "usuarios": [ { "user": "Juan", "pass": "123456", "vencimiento": "2026-12-27T11:04:34Z" } ] }
+  // Nombres de campo aceptados: user | usuario · pass | clave | password · "hash" (SHA-256 de usuario-en-minúsculas + ":" + contraseña) en lugar de pass.
+  // Opcionales: "vencimiento" (fecha ISO; pasada esa fecha ya no entra) y "activo": false (bloquea sin borrar).
+  // max_pantallas / dispositivos: la app no puede escribir en el repositorio, así que no los hace cumplir (ver explicación).
+  const lgEl = document.getElementById('login'), lgUser = document.getElementById('lg-user'),
+        lgPass = document.getElementById('lg-pass'), lgMsg = document.getElementById('lg-msg'), lgBtn = document.getElementById('lg-btn');
+  const loginOpen = () => lgEl.classList.contains('open');
+
+  function sha256(ascii) {
+    ascii = unescape(encodeURIComponent(ascii));   // texto → bytes UTF-8
+    const rr = (v, a) => (v >>> a) | (v << (32 - a)), maxWord = Math.pow(2, 32);
+    const words = [], bitLen = ascii.length * 8, hash = [], k = [], comp = {};
+    let pc = 0, i, j, result = '';
+    for (let c = 2; pc < 64; c++) {
+      if (!comp[c]) {
+        for (i = 0; i < 313; i += c) comp[i] = c;
+        hash[pc] = (Math.pow(c, .5) * maxWord) | 0;
+        k[pc++] = (Math.pow(c, 1 / 3) * maxWord) | 0;
+      }
+    }
+    ascii += '\x80';
+    while (ascii.length % 64 - 56) ascii += '\x00';
+    for (i = 0; i < ascii.length; i++) { j = ascii.charCodeAt(i); words[i >> 2] |= j << ((3 - i) % 4) * 8; }
+    words[words.length] = (bitLen / maxWord) | 0;
+    words[words.length] = bitLen;
+    let h = hash;
+    for (j = 0; j < words.length;) {
+      const w = words.slice(j, j += 16), old = h;
+      h = h.slice(0, 8);
+      for (i = 0; i < 64; i++) {
+        const w15 = w[i - 15], w2 = w[i - 2], a = h[0], e = h[4];
+        const t1 = h[7] + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25)) + ((e & h[5]) ^ (~e & h[6])) + k[i] +
+          (w[i] = (i < 16) ? w[i] : (w[i - 16] + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))) | 0);
+        const t2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) + ((a & h[1]) ^ (a & h[2]) ^ (h[1] & h[2]));
+        h = [(t1 + t2) | 0].concat(h);
+        h[4] = (h[4] + t1) | 0;
+      }
+      for (i = 0; i < 8; i++) h[i] = (h[i] + old[i]) | 0;
+    }
+    for (i = 0; i < 8; i++) for (j = 3; j + 1; j--) { const b = (h[i] >> (j * 8)) & 255; result += (b < 16 ? '0' : '') + b.toString(16); }
+    return result;
+  }
+
+  const claveDe = (u, p) => sha256(String(u).trim().toLowerCase() + ':' + p);
+  const nombreDe = e => String(e.user !== undefined ? e.user : (e.usuario !== undefined ? e.usuario : '')).trim().toLowerCase();
+  const passDe = e => e.pass !== undefined ? e.pass : (e.clave !== undefined ? e.clave : e.password);
+  const hashDe = e => e.hash ? String(e.hash).trim().toLowerCase() : (passDe(e) !== undefined ? claveDe(nombreDe(e), String(passDe(e))) : null);
+  // Usuario + contraseña correctos (sin mirar vencimiento ni bloqueo)
+  const buscarUsuario = (lista, u, k) => lista.find(e => e && nombreDe(e) === String(u).trim().toLowerCase() && hashDe(e) === k);
+  // null = puede entrar · de lo contrario, el mensaje que se le muestra al usuario
+  function motivoBloqueo(e) {
+    if (e.activo === false) return 'Tu acceso no está activo. Contacta a tu proveedor.';
+    if (e.vencimiento) {
+      const t = Date.parse(e.vencimiento);
+      if (!isNaN(t) && Date.now() > t) return 'Tu suscripción ha vencido. Contacta a tu proveedor.';
+    }
+    return null;
+  }
+
+  // Descarga usuarios.json (siempre fresco); si no hay conexión, usa la última copia guardada. null = no se pudo obtener.
+  async function cargarUsuarios() {
+    let txt = null, origen = 'red';
+    try { txt = await fetchRaw('usuarios.json', 6000); LS.set('ph_cache_usuarios', txt); }
+    catch (e) { txt = LS.get('ph_cache_usuarios'); origen = 'copia guardada'; plog('LOGIN', 'No se pudo descargar usuarios.json: ' + ((e && e.message) || e)); }
+    if (!txt) return null;
+    try {
+      const j = JSON.parse(txt), lista = Array.isArray(j) ? j : (j.usuarios || []);
+      plog('LOGIN', 'usuarios.json (' + origen + '): ' + lista.length + ' usuario(s)');
+      return lista;
+    } catch (e) { plog('LOGIN', 'usuarios.json no es un JSON válido: ' + ((e && e.message) || e)); return null; }
+  }
+
+  function salirApp() {
+    const App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (App && App.exitApp) App.exitApp(); else window.close();
+  }
+
+  function abrirLogin(msg) {
+    lgEl.classList.add('open');
+    lgUser.value = ''; lgPass.value = ''; lgMsg.textContent = msg || '';
+    setTimeout(() => lgUser.focus(), 100);
+  }
+
+  let verificando = false;
+  async function intentarLogin() {
+    if (verificando) return;
+    const u = lgUser.value.trim(), p = lgPass.value;
+    if (!u || !p) { lgMsg.textContent = 'Escribe usuario y contraseña.'; return; }
+    verificando = true; lgMsg.textContent = ''; lgBtn.textContent = 'Verificando…';
+    const k = claveDe(u, p);
+    const lista = await cargarUsuarios();
+    verificando = false; lgBtn.textContent = 'Entrar';
+    if (!lista) { lgMsg.textContent = 'No se pudo conectar. Intenta de nuevo.'; return; }
+    const ent = buscarUsuario(lista, u, k);
+    if (!ent) { plog('LOGIN', 'Sin coincidencia para "' + u + '" (' + lista.length + ' usuario(s) en la lista)'); lgMsg.textContent = 'Usuario o contraseña incorrectos.'; lgPass.value = ''; lgPass.focus(); return; }
+    const bloqueo = motivoBloqueo(ent);
+    if (bloqueo) { plog('LOGIN', '"' + u + '" rechazado: ' + bloqueo); lgMsg.textContent = bloqueo; lgPass.value = ''; return; }
+    LS.set('ph_sesion', JSON.stringify({ u: u.toLowerCase(), k }));
+    lgEl.classList.remove('open'); lgUser.value = ''; lgPass.value = ''; lgMsg.textContent = '';
+    setTimeout(() => { const a = document.querySelector('#main-nav button.active') || navButtons[0]; if (a) a.focus(); }, 100);
+  }
+
+  // Sesión que ya no es válida (usuario borrado, bloqueado o con otra clave): se cierra todo y se pide entrar de nuevo
+  function cerrarSesion(msg) {
+    try { localStorage.removeItem('ph_sesion'); } catch (e) {}
+    pbar.close(); destroyPlayers();
+    playerEl.classList.remove('open'); modal.classList.remove('open'); detail.classList.remove('open');
+    abrirLogin(msg || 'Tu sesión ya no es válida. Entra de nuevo.');
+  }
+
+  lgBtn.addEventListener('click', intentarLogin);
+  window.addEventListener('keydown', (e) => {
+    if (!loginOpen()) return;
+    const k = e.key, ae = document.activeElement, items = [lgUser, lgPass, lgBtn], i = items.indexOf(ae);
+    if (k === 'ArrowDown') { e.preventDefault(); items[Math.min(i < 0 ? 0 : i + 1, 2)].focus(); }
+    else if (k === 'ArrowUp') { e.preventDefault(); if (i > 0) items[i - 1].focus(); }
+    else if (k === 'Enter') {
+      if (ae === lgUser) { e.preventDefault(); lgPass.focus(); }
+      else if (ae === lgPass) { e.preventDefault(); intentarLogin(); }
+    } else if ((k === 'ArrowLeft' || k === 'ArrowRight') && ae === lgBtn) e.preventDefault();
+  });
+  // El foco no puede escaparse hacia la app que hay detrás
+  document.addEventListener('focusin', (e) => { if (loginOpen() && !lgEl.contains(e.target)) lgUser.focus(); });
+
+  // Arranque: con sesión guardada se entra directo y se revisa en segundo plano; sin sesión se pide usuario y contraseña
+  (() => {
+    let ses = null;
+    try { ses = JSON.parse(LS.get('ph_sesion') || 'null'); } catch (e) { ses = null; }
+    if (ses && ses.u && ses.k) {
+      cargarUsuarios().then(lista => {
+        if (!lista) return;   // sin conexión ni copia: se deja entrar con la sesión guardada
+        const ent = buscarUsuario(lista, ses.u, ses.k);
+        if (!ent) cerrarSesion();
+        else { const m = motivoBloqueo(ent); if (m) cerrarSesion(m); }
+      }).catch(() => {});
+    } else abrirLogin();
+  })();
+
   // ---------- Inicio ----------
   // 1) Abre al instante con lo guardado. 2) Revisa version.json en segundo plano.
   // 3) Lo nuevo se guarda; los canales se refrescan solos, el proveedor/extractor se usan al próximo arranque.
@@ -1576,7 +1742,7 @@
       try { cargarDesdeCache(); } catch (e) { console.error(e); }
     }
     renderCanales();
-    setTimeout(() => navButtons[0].focus(), 200);
+    setTimeout(() => { if (!loginOpen()) navButtons[0].focus(); }, 200);
 
     if (completo) {
       revisarActualizaciones().then(act => {
