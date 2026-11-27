@@ -561,6 +561,9 @@
 
   function autoFocus() {
     setTimeout(() => {
+      /* Si el foco ya está en algún lado (p. ej. la barra de secciones tras pulsar OK), no se roba */
+      const ae = document.activeElement;
+      if (ae && ae !== document.body && document.body.contains(ae)) return;
       const first = app.querySelector('.card, .genre-card, input, button');
       if (first) first.focus();
     }, 100);
@@ -783,6 +786,33 @@
     }
   }
 
+  // Diagnóstico de un 403/error en el manifiesto: repite la petición con distintas combinaciones de headers
+  async function probeManifest(url, headers) {
+    const cap = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorHttp;
+    if (!cap) return;
+    let origin = ''; try { origin = new URL(headers.Referer || headers.referer).origin; } catch (e) {}
+    const variants = [
+      ['headers del extractor', headers],
+      ['+ Origin', Object.assign({}, headers, origin ? { Origin: origin } : {})],
+      ['+ Origin + Accept */*', Object.assign({ Accept: '*/*' }, headers, origin ? { Origin: origin } : {})],
+      ['solo User-Agent', { 'User-Agent': headers['User-Agent'] || '' }],
+      ['sin headers', {}]
+    ];
+    plog('PRUEBA', 'Probando el manifiesto con ' + variants.length + ' combinaciones de headers…');
+    for (const [name, h] of variants) {
+      try {
+        const r = await cap.get({ url, headers: h, responseType: 'text', connectTimeout: 10000, readTimeout: 10000 });
+        const body = typeof r.data === 'string' ? r.data : JSON.stringify(r.data);
+        const rh = r.headers || {};
+        const ct = rh['Content-Type'] || rh['content-type'] || '?';
+        const ck = (rh['Set-Cookie'] || rh['set-cookie']) ? 'sí' : 'no';
+        plog('PRUEBA', name + ' → HTTP ' + r.status + ' · ' + ct + ' · ' + body.length + ' bytes · set-cookie: ' + ck + ' · ' + body.slice(0, 200).replace(/\s+/g, ' '));
+        if (r.status < 400) { plog('PRUEBA', '✓ FUNCIONA con: ' + name); return; }
+      } catch (e) { plog('PRUEBA', name + ' → ERROR ' + ((e && e.message) || e)); }
+    }
+    plog('PRUEBA', 'Ninguna combinación funcionó.');
+  }
+
   function playHls(url, headers) {
     if (window.Hls && Hls.isSupported()) {
       const cfg = {};
@@ -800,7 +830,11 @@
       hls.on(Hls.Events.ERROR, (e, d) => {
         if (!d) return;
         plog('HLS', (d.fatal ? 'FATAL ' : 'error ') + d.type + '/' + d.details + (d.response && d.response.code !== undefined ? ' · HTTP ' + d.response.code : '') + (d.url ? ' · ' + String(d.url).slice(0, 100) : ''));
-        if (d.fatal) { playerMsg.textContent = 'No se pudo reproducir este video.'; if (PHC.mode) PHC.openLog(); }
+        if (d.fatal) {
+          playerMsg.textContent = 'No se pudo reproducir este video.';
+          const after = () => { if (PHC.mode) PHC.openLog(); };
+          if (d.details === 'manifestLoadError' && headers) probeManifest(url, headers).then(after, after); else after();
+        }
       });
     } else {
       plog('HLS', (window.Hls ? 'hls.js no soportado' : 'hls.js NO cargó (¿falta hls.min.js?)') + ' · se usa <video src> directo · ' + url);
@@ -1067,6 +1101,130 @@
     }
   });
 
+  // ---------- Control remoto (↑ ↓ ← →) ----------
+  // El foco se mueve por secciones, canales, películas y series; solo OK (Enter) elige.
+  // Barra de secciones: ←/→ mueve el foco, ↓ baja al contenido, ↑ se queda en la barra.
+  // Contenido: ←/→ dentro de la fila, ↑/↓ entre filas; ↑ desde la primera fila vuelve a la sección activa.
+  const navList = Array.from(navButtons);
+
+  function rcScrollX(el) {
+    const sc = el.closest('.carousel, .d-eps, .d-actions');
+    if (!sc || sc.scrollWidth <= sc.clientWidth) return;
+    const r = el.getBoundingClientRect(), c = sc.getBoundingClientRect();
+    const left = sc.scrollLeft + (r.left - c.left) - (c.width - r.width) / 2;
+    try { sc.scrollTo({ left: Math.max(0, left), behavior: 'smooth' }); } catch (_) { sc.scrollLeft = Math.max(0, left); }
+  }
+  function rcScrollY(el, box) {
+    const sec = el.closest('.section');
+    const t = (sec && sec.offsetHeight <= box.clientHeight) ? sec : el;   // se intenta ver la fila completa con su título
+    const r = t.getBoundingClientRect(), c = box.getBoundingClientRect();
+    if (r.top < c.top + 8) box.scrollTop -= (c.top + 8 - r.top);
+    else if (r.bottom > c.bottom - 8) box.scrollTop += (r.bottom - c.bottom + 8);
+  }
+  function rcFocus(el) {
+    if (!el) return;
+    try { el.focus({ preventScroll: true }); } catch (_) { el.focus(); }
+    rcScrollX(el);
+    const box = detail.classList.contains('open') ? detail : app;
+    if (box.contains(el)) rcScrollY(el, box);
+  }
+
+  // Filas navegables de la vista actual (o del detalle si está abierto), en orden de pantalla
+  function rcRows() {
+    if (detail.classList.contains('open')) {
+      return [Array.from(dActions.querySelectorAll('button')), Array.from(dEps.querySelectorAll('.ep-card'))].filter(r => r.length);
+    }
+    const rows = [];
+    const qi = document.getElementById('q-input'), qb = document.getElementById('btn-search');
+    if (qi) rows.push([qi, qb].filter(Boolean));
+    app.querySelectorAll('.carousel').forEach(c => { const r = Array.from(c.querySelectorAll('.card')); if (r.length) rows.push(r); });
+    app.querySelectorAll('.grid').forEach(g => {
+      const m = new Map();
+      g.querySelectorAll('.card').forEach(c => { const k = c.offsetTop; if (!m.has(k)) m.set(k, []); m.get(k).push(c); });
+      m.forEach(r => rows.push(r));
+    });
+    rows.sort((a, b) => (a[0].compareDocumentPosition(b[0]) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
+    return rows;
+  }
+
+  // Elemento de la fila más cercano en horizontal al actual
+  function rcNearest(row, from) {
+    const fr = from.getBoundingClientRect(), cx = (fr.left + fr.right) / 2;
+    let best = row[0], bd = Infinity;
+    row.forEach(el => { const r = el.getBoundingClientRect(), d = Math.abs((r.left + r.right) / 2 - cx); if (d < bd) { bd = d; best = el; } });
+    return best;
+  }
+
+  window.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k !== 'ArrowUp' && k !== 'ArrowDown' && k !== 'ArrowLeft' && k !== 'ArrowRight') return;
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (PHC.isOpen() || playerEl.classList.contains('open')) return;   // consola y reproductor llevan lo suyo
+    const ae = document.activeElement;
+
+    // Modal (servidores / salir): ↑/↓ recorren las opciones
+    if (modal.classList.contains('open')) {
+      e.preventDefault();
+      const items = Array.from(modal.querySelectorAll('#modal-row button, #modal-list button, #modal-close'));
+      const i = items.indexOf(ae);
+      const t = k === 'ArrowDown' ? items[i < 0 ? 0 : Math.min(i + 1, items.length - 1)]
+              : k === 'ArrowUp' ? items[i < 0 ? 0 : Math.max(i - 1, 0)] : null;
+      if (t) t.focus();
+      return;
+    }
+
+    const inDetail = detail.classList.contains('open');
+    const rows = rcRows();
+
+    // Barra de secciones
+    if (!inDetail && navList.indexOf(ae) >= 0) {
+      e.preventDefault();
+      const i = navList.indexOf(ae);
+      if (k === 'ArrowLeft') rcFocus(navList[Math.max(0, i - 1)]);
+      else if (k === 'ArrowRight') rcFocus(navList[Math.min(navList.length - 1, i + 1)]);
+      else if (k === 'ArrowDown' && rows.length) rcFocus(rows[0][0]);
+      return;   // ↑: el foco se queda en la barra
+    }
+
+    // Posición actual dentro de las filas
+    let r = -1, c = -1;
+    rows.forEach((row, ri) => { const ci = row.indexOf(ae); if (ci >= 0) { r = ri; c = ci; } });
+    if (r < 0) {   // foco perdido: se recupera para que el control no quede muerto
+      e.preventDefault();
+      if (inDetail) { if (rows.length) rcFocus(rows[0][0]); }
+      else rcFocus(document.querySelector('#main-nav button.active') || navList[0]);
+      return;
+    }
+
+    const row = rows[r], cur = row[c];
+    if (k === 'ArrowLeft' || k === 'ArrowRight') {
+      if (cur.tagName === 'INPUT') {   // en el buscador, ←/→ mueven el cursor hasta llegar al borde del texto
+        const atStart = cur.selectionStart === 0 && cur.selectionEnd === 0;
+        const atEnd = cur.selectionStart === cur.value.length && cur.selectionEnd === cur.value.length;
+        if ((k === 'ArrowLeft' && !atStart) || (k === 'ArrowRight' && !atEnd)) return;
+      }
+      e.preventDefault();
+      const n = row[c + (k === 'ArrowRight' ? 1 : -1)];
+      if (n) rcFocus(n);
+      return;
+    }
+
+    e.preventDefault();
+    if (k === 'ArrowDown') {
+      const nr = rows[r + 1];
+      if (nr) rcFocus(inDetail ? nr[0] : rcNearest(nr, cur));
+    } else {   // ArrowUp
+      if (r > 0) {
+        const pr = rows[r - 1];
+        const act = inDetail ? pr.find(b => b.classList.contains('active')) : null;   // de capítulos sube a la temporada activa
+        rcFocus(act || rcNearest(pr, cur));
+      } else if (!inDetail) {
+        rcFocus(document.querySelector('#main-nav button.active') || navList[0]);   // primera fila → sección activa
+      }
+      // En el detalle, ↑ desde la primera fila no hace nada
+    }
+  });
+
   // ---------- Menú ----------
   navButtons.forEach(b => {
     b.addEventListener('click', () => {
@@ -1104,8 +1262,9 @@
           try { canales = JSON.parse(MEM[ARCHIVOS[0].cache] || LS.get(ARCHIVOS[0].cache) || 'null'); } catch (e) {}
           const enNav = document.activeElement && document.activeElement.closest && document.activeElement.closest('#main-nav');
           if (vistaActual === 'canales' && enNav && !detail.classList.contains('open')) {
+            const prev = document.activeElement;
             renderCanales();
-            setTimeout(() => navButtons[0].focus(), 50);
+            setTimeout(() => { if (prev && document.body.contains(prev)) prev.focus(); }, 50);
           }
         }
       }).catch(e => console.warn(e));
