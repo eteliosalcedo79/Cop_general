@@ -1,4 +1,4 @@
-name: Compilar APK con mis archivos
+name: Compilar APK 
 
 on: workflow_dispatch
 
@@ -6,7 +6,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
       
       - name: Configurar Node.js
         uses: actions/setup-node@v4
@@ -22,21 +23,27 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
-      # ESTO ARREGLA EL NOMBRE DE LA CARPETA SI ESTÁ EN MAYÚSCULA
+      # 1. Arregla el nombre de la carpeta si está como "Android"
       - name: Renombrar carpeta a minúscula
         run: |
           if [ -d "Android" ]; then mv Android android; fi
         
-      # Sincroniza los archivos de la carpeta www con tu proyecto Android
+      # 2. Sincroniza los archivos de la carpeta www con Android
       - name: Sincronizar archivos web
         run: npx cap sync
+
+      # 3. Genera los iconos desde tu logo.png en la raíz
+      - name: Generar iconos desde logo.png
+        run: npx @capacitor/assets generate --android
         
+      # 4. Compila el APK
       - name: Compilar APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
           
+      # 5. Guarda el APK para que lo descargues
       - name: Guardar el APK
         uses: actions/upload-artifact@v4
         with:
