@@ -32,28 +32,12 @@ jobs:
       - name: Generar iconos desde logo.png
         run: npx @capacitor/assets generate --android
 
-      - name: Configurar iconos adaptativos
+      # --- ESTO ES LO QUE OBLIGA A ANDROID A USAR TU LOGO ---
+      - name: Eliminar XML viejos (Forzar íconos PNG)
         run: |
-          # 1. Creamos el archivo de color de fondo (Blanco)
-          mkdir -p android/app/src/main/res/values
-          cat << 'EOF' > android/app/src/main/res/values/ic_launcher_background.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="ic_launcher_background">#FFFFFF</color>
-          </resources>
-          EOF
-
-          # 2. Escribimos el XML usando el color de fondo
-          cat << 'EOF' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/ic_launcher_background" />
-              <foreground android:drawable="@mipmap/ic_launcher_foreground" />
-          </adaptive-icon>
-          EOF
-          
-          # 3. Copiamos el mismo XML para el icono redondo
-          cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+      # ------------------------------------------------------
         
       - name: Compilar APK
         run: |
