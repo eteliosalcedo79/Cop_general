@@ -105,7 +105,7 @@
   /* MODAL Y ESTADOS */
   .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 100; }
   .modal.open { display: flex; }
-  .modal-inner { background: var(--sidebar); border-radius: 16px; padding: 4vh 4vw; max-width: 70vw; width: 100%; text-align: center; border: 2px solid var(--border); max-height: 92vh; overflow-y: auto; }
+  .modal-inner { position: relative; background: var(--sidebar); border-radius: 16px; padding: 4vh 4vw; max-width: 70vw; width: 100%; text-align: center; border: 2px solid var(--border); max-height: 92vh; overflow-y: auto; }
   .modal-inner h3 { font-size: 2.5vw; margin: 0 0 2vh 0; color: var(--accent); }
   .modal-inner p { font-size: 1.4vw; color: var(--text); margin: 0 0 2.5vh 0; line-height: 1.5; text-align: justify; max-height: 22vh; overflow-y: auto; }
   .modal-inner button { background: var(--accent); color: #fff; border: none; padding: 1.5vh 3vw; font-size: 1.5vw; border-radius: 8px; font-weight: bold; }
@@ -113,6 +113,10 @@
   .modal-row { display: flex; gap: 1vw; flex-wrap: wrap; justify-content: center; margin-bottom: 2vh; }
   .modal-list { display: flex; flex-direction: column; gap: 1vh; align-items: stretch; max-height: 32vh; overflow-y: auto; margin-bottom: 2.5vh; padding: 0.5vh 0.5vw; }
   .modal-row:empty, .modal-list:empty { display: none; }
+  #modal-spin { display: none; width: 34px; height: 34px; margin: 28px auto; border: 4px solid rgba(255,255,255,.18); border-top-color: var(--accent); border-radius: 50%; animation: mSpin .8s linear infinite; }
+  .modal.loading #modal-spin { display: block; }
+  .modal.loading.srv #modal-spin { position: absolute; top: 50%; left: 50%; margin: -17px 0 0 -17px; }
+  @keyframes mSpin { to { transform: rotate(360deg); } }
   .modal-inner button.opt { background: var(--card); border: 2px solid var(--border); padding: 1.2vh 1.5vw; font-size: 1.3vw; text-align: left; }
   .modal-inner button.opt.sel { border-color: #fff; }
   .modal-inner button.opt:focus { border-color: var(--accent); box-shadow: 0 0 12px rgba(229,9,20,0.5); transform: none; }
@@ -263,6 +267,7 @@
     <p id="modal-desc"></p>
     <div class="modal-row" id="modal-row"></div>
     <div class="modal-list" id="modal-list"></div>
+    <div id="modal-spin"></div>
   </div>
 </div>
 
@@ -1220,11 +1225,19 @@
 
   function setModal(title, desc, back, srv) {
     modal.classList.toggle('srv', !!srv);
+    modal.classList.remove('loading');
     mTitle.textContent = title;
     mDesc.textContent = desc || '';
     mDesc.style.display = desc ? '' : 'none';
     mRow.innerHTML = ''; mList.innerHTML = '';
     modalBack = back || null;
+  }
+
+  // Mensaje solo para errores; la carga se indica con el círculo, sin texto
+  function modalMsg(txt) {
+    modal.classList.remove('loading');
+    mDesc.textContent = txt || '';
+    mDesc.style.display = txt ? '' : 'none';
   }
 
   function focusModal() {
@@ -1353,16 +1366,16 @@
   // ---------- Modal de servidores ----------
   async function showServers(media, label) {
     lastFocus = document.activeElement;
-    setModal(label, 'Buscando servidores...', null, true);
-    modal.classList.add('open');
+    setModal(label, '', null, true);
+    modal.classList.add('open', 'loading');
     mInner.focus();
     plog('SERVIDORES', 'Buscando para ' + label);
-    if (!extractor) { mDesc.textContent = 'El extractor de video no está disponible.'; plog('SERVIDORES', 'extractor NO disponible'); return; }
+    if (!extractor) { modalMsg('El extractor de video no está disponible.'); plog('SERVIDORES', 'extractor NO disponible'); return; }
     let servers = [];
     try { servers = await extractor.servers(media); } catch (e) { console.error(e); }
-    if (!servers.length) { plog('SERVIDORES', 'ninguno · ' + (window.PH.last || '')); mDesc.textContent = 'No se encontraron servidores para este título.' + (window.PH.last ? ' (' + window.PH.last + ')' : ''); return; }
+    if (!servers.length) { plog('SERVIDORES', 'ninguno · ' + (window.PH.last || '')); modalMsg('No se encontraron servidores para este título.' + (window.PH.last ? ' (' + window.PH.last + ')' : '')); return; }
     plog('SERVIDORES', servers.length + ' → ' + servers.map(s => s.name).join(', '));
-    mDesc.textContent = 'Elige un servidor:';
+    modalMsg('');
     servers.forEach(s => addOpt(mList, s.name, () => playServer(s, label)));
     focusModal();
   }
@@ -1375,7 +1388,8 @@
   if (window.PHC) window.PHC.onPlay = playResolved;
 
   async function playServer(server, label) {
-    mDesc.textContent = 'Obteniendo video...';
+    modalMsg('');
+    modal.classList.add('loading');
     const host = hostOf(server.src), t0 = Date.now(), url = String(server.src).slice(0, 90);
     plog('EXTRACT', 'Servidor «' + server.name + '» · ' + server.src);
     try {
@@ -1385,7 +1399,7 @@
       PHC.histPush({ host, ok: true, ms, url });
       const pl = { source: v.source, headers: v.headers, label };
       if (PHC.mode) {
-        mDesc.textContent = 'Elige un servidor:';
+        modalMsg('');
         PHC.show('EXTRACTOR: OK', 'Servidor: ' + server.name + '\nEmbed: ' + server.src + '\nTiempo: ' + ms + ' ms\n\nURL: ' + v.source +
           '\nHeaders: ' + safeJson(v.headers || {}) + '\n\n--- Respuesta completa del extractor ---\n' + safeJson(v), pl);
         return;
@@ -1395,7 +1409,7 @@
       const ms = Date.now() - t0, msg = (e && e.message) || String(e);
       plog('EXTRACT', 'FALLÓ ' + ms + ' ms · ' + msg);
       PHC.histPush({ host, ok: false, ms, url, err: msg.slice(0, 80) });
-      mDesc.textContent = 'No se pudo obtener el video de este servidor. Prueba con otro.';
+      modalMsg('No se pudo obtener el video de este servidor. Prueba con otro.');
       console.error(e);
       if (PHC.mode) PHC.show('EXTRACTOR: FALLÓ', 'Servidor: ' + server.name + '\nEmbed: ' + server.src + '\nError: ' + msg +
         '\nÚltima petición: ' + (window.PH.last || '-') + '\n\n--- Últimas líneas del registro ---\n' + PHC.tail(25), null);
